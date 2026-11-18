@@ -82,6 +82,8 @@ class TrackMapModule(ModuleWindow):
             pct = int(rec.progress * 100)
             if snap.player() is None or snap.player().world_x is None:
                 self._msg(p, w, h, tr("SEM POSIÇÃO DO CARRO\npara gravar o traçado"))
+            elif rec.discards:
+                self._msg(p, w, h, tr("VOLTA DESCARTADA (não fechou)\ndê outra volta limpa  {}%").format(pct))
             else:
                 self._msg(p, w, h, tr("GRAVANDO O TRAÇADO  {}%\ncomplete uma volta").format(pct))
             return

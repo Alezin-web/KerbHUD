@@ -270,7 +270,7 @@ class OverlayManager(QObject):
         """O que decide a visibilidade por regra (se isto muda, os módulos precisam ser reavaliados)."""
         if snap is None:
             return None
-        return (snap.connected, snap.in_garage, snap.player() is not None, snap.is_demo)
+        return (snap.connected, snap.in_garage, snap.driving, snap.player() is not None, snap.is_demo)
 
     def _on_tick(self) -> None:
         snap = self.engine.latest()

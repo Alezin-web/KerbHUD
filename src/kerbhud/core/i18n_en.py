@@ -86,6 +86,7 @@ TRANSLATIONS: dict[str, str] = {
     "Le Mans Ultimate": "Le Mans Ultimate", "usuario/repositorio  (ex.: alex/KerbHUD)": "user/repository  (e.g. alex/KerbHUD)",
     "Avisar na bandeja quando houver versão nova (ao iniciar)": "Notify in the tray when a new version exists (at startup)",
     "Repositório no GitHub": "GitHub repository",
+    "VOLTA DESCARTADA (não fechou)\ndê outra volta limpa  {}%": "LAP DISCARDED (did not close)\ndrive another clean lap  {}%",
     "Deixe vazio para usar o repositório oficial do KerbHUD.": "Leave empty to use the official KerbHUD repository.",
     "As atualizações vêm dos Releases públicos do repositório. Só se conecta ao github.com (HTTPS); a pasta de dados (logos, bandeiras, layouts...) nunca é alterada.": "Updates come from the repository's public Releases. It only connects to github.com (HTTPS); the data folder (logos, flags, layouts...) is never changed.",
     "Atualização": "Update", "OK": "OK", "Aplicar": "Apply", "Cancelar": "Cancel", "Fechar": "Close",

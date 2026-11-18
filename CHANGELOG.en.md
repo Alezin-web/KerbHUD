@@ -1,3 +1,9 @@
+## 0.17.3 — Replay and Track Map on iRacing
+
+* **"On track only" now works in replays:** on iRacing, the replay, the results screen and the gap between sessions no longer count as track (or garage). With "On track only" or "In the garage only" the overlay hides on those screens; only "Always" and DEMO show.
+* **Track Map records on tracks with the pit lane along the start straight** (like Navarra): the pit lane now helps complete the outline instead of keeping it from ever finishing.
+* **Track Map warning** when a lap is discarded for not closing, instead of staying stuck at the same percentage.
+
 ## 0.17.2 — Ready for GitHub
 
 * **Updates with zero setup:** KerbHUD already knows where to look for new versions (official repository `Alezin-web/KerbHUD`). The *Repository* field in Config → Settings → Update only needs filling if you use a different one.

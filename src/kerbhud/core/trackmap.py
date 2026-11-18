@@ -20,6 +20,7 @@ from .model import CarState, CarStatus, Sim, Snapshot
 
 BINS = 400  # pontos do traçado (um a cada 0,25% da volta)
 COMPLETE_AT = 0.97  # fração da volta que precisa ter sido coberta
+MIN_TRACK = 0.80  # o box só tapa buracos: pelo menos isto da volta tem que ter sido gravado na pista de verdade
 MIN_SPEED_MS = 3.0  # abaixo disso (boxes, rodada) não grava
 MAX_CLOSURE = 0.10  # distância entre o fim e o começo, como fração do tamanho do circuito
 
@@ -98,14 +99,18 @@ class TrackRecorder:
     store: Optional[TrackStore] = None
     shape: Optional[TrackShape] = None
     progress: float = 0.0
+    discards: int = 0  # voltas gravadas e descartadas por não fecharem (para o módulo avisar, em vez de ficar mudo)
     _key: Optional[str] = None
     _sum: list = field(default_factory=lambda: [[0.0, 0.0, 0] for _ in range(BINS)])
+    _pit: list = field(default_factory=lambda: [[0.0, 0.0, 0] for _ in range(BINS)])  # box em movimento: só tapa buracos
 
     def reset(self, forget_saved: bool = False) -> None:
         if forget_saved and self.store and self._key:
             self.store.delete(self._key)
         self.shape, self.progress = None, 0.0
         self._sum = [[0.0, 0.0, 0] for _ in range(BINS)]
+        self._pit = [[0.0, 0.0, 0] for _ in range(BINS)]
+        self.discards = 0
         if not forget_saved:
             self._key = None
 
@@ -121,18 +126,19 @@ class TrackRecorder:
         me = snap.player()
         if me is None or me.world_x is None or me.world_z is None or me.lap_dist_pct is None:
             return None
-        if me.status != CarStatus.RUNNING or not me.in_session:
+        if me.status not in (CarStatus.RUNNING, CarStatus.PITS) or not me.in_session:
             return None
         if snap.inputs is not None and snap.inputs.speed_ms < MIN_SPEED_MS:
             return None
         b = int((me.lap_dist_pct % 1.0) * BINS) % BINS
-        acc = self._sum[b]
+        acc = self._pit[b] if me.status == CarStatus.PITS else self._sum[b]  # box: só serve para tapar buracos
         acc[0] += me.world_x
         acc[1] += -me.world_z  # norte para cima
         acc[2] += 1
-        filled = sum(1 for a in self._sum if a[2])
-        self.progress = filled / BINS
-        if self.progress >= COMPLETE_AT:
+        on_track = sum(1 for a in self._sum if a[2]) / BINS  # só a pista de verdade; o box nunca basta sozinho
+        union = sum(1 for a, q in zip(self._sum, self._pit) if a[2] or q[2]) / BINS
+        self.progress = on_track if on_track < MIN_TRACK else union
+        if on_track >= MIN_TRACK and union >= COMPLETE_AT:
             self._finish(snap)
         return self.shape
 
@@ -140,18 +146,28 @@ class TrackRecorder:
         pts = self._interpolated()
         xs, ys = [p[0] for p in pts], [p[1] for p in pts]
         size = math.hypot(max(xs) - min(xs), max(ys) - min(ys)) or 1.0
-        known = [i for i, a in enumerate(self._sum) if a[2]]
+        covered = [bool(a[2] or q[2]) for a, q in zip(self._sum, self._pit)]
+        known = [i for i, c in enumerate(covered) if c]
         first, last = pts[known[0]], pts[known[-1]]  # medidos (o resto foi interpolado)
-        if math.hypot(first[0] - last[0], first[1] - last[1]) > MAX_CLOSURE * size:
+        # o buraco entre o fim e o começo da volta (ex.: box na reta de largada) pode ser longo: dá folga proporcional a ele
+        gap_bins = known[0] + BINS - known[-1] - 1
+        perimeter = sum(math.hypot(pts[i][0] - pts[(i + 1) % BINS][0], pts[i][1] - pts[(i + 1) % BINS][1]) for i in range(BINS))
+        allowed = MAX_CLOSURE * size + 1.5 * gap_bins / BINS * perimeter
+        if math.hypot(first[0] - last[0], first[1] - last[1]) > allowed:
+            discards = self.discards + 1
             self.reset()  # volta suja (rodada, atalho, teletransporte): descarta e grava de novo
             self._key = track_key(snap)
+            self.discards = discards
             return
         self.shape = TrackShape(self._key or "", snap.session.track_name or "", pts)
         if self.store:
             self.store.save(self.shape)
 
     def _interpolated(self) -> list[tuple[float, float]]:
-        vals = [(a[0] / a[2], a[1] / a[2]) if a[2] else None for a in self._sum]
+        vals = []
+        for a, q in zip(self._sum, self._pit):
+            src = a if a[2] else q  # a pista tem prioridade; o box só entra onde faltou dado
+            vals.append((src[0] / src[2], src[1] / src[2]) if src[2] else None)
         known = [i for i, v in enumerate(vals) if v is not None]
         out: list[tuple[float, float]] = []
         for i in range(BINS):

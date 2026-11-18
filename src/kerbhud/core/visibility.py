@@ -2,6 +2,7 @@
 
 Só "Sempre" e o modo DEMO mostram tudo o tempo todo. O estado "na garagem" vem do simulador (`Snapshot.in_garage`): iRacing `IsInGarage`; LMU, o carro do piloto parado
 na vaga da garagem (`mInGarageStall`). Se o simulador não informar a garagem mas o carro do piloto existir, ele é tratado como "na pista".
+No iRacing, replay e telas entre sessões não são "pista" nem "garagem": o simulador diz que o piloto não está dirigindo (`Snapshot.driving`).
 Cada módulo pode seguir a regra global (`global`) ou ter a sua própria (`options["show_when"]`).
 """
 from __future__ import annotations
@@ -23,7 +24,8 @@ def effective_mode(global_mode, module_mode) -> str:
 
 def on_track(snap: Snapshot | None) -> bool:
     """Piloto realmente na pista: simulador conectado, carro do piloto existe e não está na garagem."""
-    return bool(snap and snap.connected and snap.player() is not None and snap.in_garage is not True)
+    return bool(snap and snap.connected and snap.player() is not None and snap.in_garage is not True
+                and snap.driving is not False)
 
 
 def in_garage(snap: Snapshot | None) -> bool:

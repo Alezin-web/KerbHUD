@@ -67,7 +67,7 @@ def _render(s: Snapshot) -> str:
                f"incidentes={ss.incidents}/{ss.incident_limit}")
     if s.debug:
         out.append("  Debug: " + ", ".join(f"{k}={v}" for k, v in s.debug.items()))
-    out.append(f"  Piloto na garagem: {s.in_garage}")
+    out.append(f"  Piloto na garagem: {s.in_garage}   dirigindo: {s.driving}")
     out.append(f"  Carros: {len(s.cars)}   capacidades: {', '.join(sorted(s.capabilities))}")
     for c in sorted(s.cars, key=lambda c: c.position or 999)[:8]:
         mark = ">" if c.is_player else " "

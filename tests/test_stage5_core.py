@@ -54,6 +54,53 @@ class TestTrackRecording(unittest.TestCase):
         self.assertIsNone(rec.shape)
         self.assertEqual(rec.progress, 0.0)
 
+    def test_pit_lane_over_the_start_straight_does_not_block_the_map(self):
+        # box ao longo da reta de largada (ex.: Navarra): com 97% exigidos, o traçado nunca ficava pronto
+        for pit_from, pit_to in ((0.97, 0.03), (0.94, 0.07), (0.90, 0.10)):
+            rec = TrackRecorder()
+            for i in range(0, 3001):
+                pct = (i / 3000) % 1.0
+                in_pit = pct >= pit_from or pct < pit_to
+                rec.update(snap(pct=pct, status=CarStatus.PITS if in_pit else CarStatus.RUNNING, speed=20.0 if in_pit else 60.0))
+            self.assertIsNotNone(rec.shape, (pit_from, pit_to))
+
+    def test_unrecorded_pit_stretch_is_filled_by_the_next_lap_on_the_straight(self):
+        rec = TrackRecorder()
+        for i in range(0, 3001):  # volta 1: saiu dos boxes parado em 5%..6%; buraco de 11% sem nenhuma amostra
+            pct = (i / 3000) % 1.0
+            in_pit = pct >= 0.95 or pct < 0.06
+            rec.update(snap(pct=pct, status=CarStatus.PITS if in_pit else CarStatus.RUNNING, speed=1.0 if in_pit else 60.0))
+        self.assertIsNone(rec.shape)  # não aceita buraco: um mapa com 11% inventado seria pior que esperar
+        self.assertAlmostEqual(rec.progress, 0.89, delta=0.01)
+        for i in range(0, 3001):  # volta 2: passa pela reta de verdade
+            rec.update(snap(pct=(i / 3000) % 1.0, speed=60.0))
+        self.assertIsNotNone(rec.shape)
+
+    def test_pit_lane_alone_never_makes_a_map(self):
+        rec = TrackRecorder()
+        for i in range(0, 3001):
+            rec.update(snap(pct=(i / 3000) % 1.0, status=CarStatus.PITS, speed=20.0))
+        self.assertIsNone(rec.shape)
+
+    def test_too_big_a_gap_is_not_accepted(self):
+        rec = TrackRecorder()
+        for i in range(0, 3001):
+            pct = (i / 3000) % 1.0
+            rec.update(snap(pct=pct, status=CarStatus.RUNNING if 0.2 <= pct < 0.9 else CarStatus.OUT, speed=60.0))
+        self.assertIsNone(rec.shape)  # só 70% da volta tem dado
+
+    def test_discarded_laps_are_counted_so_the_module_can_say_so(self):
+        rec = TrackRecorder()
+        for i in range(0, 1601):
+            pct = (i / 1600) % 1.0
+            x, z = circle(pct)
+            s = snap(pct=pct)
+            s.cars[0].world_x, s.cars[0].world_z = x + i, z
+            rec.update(s)
+        self.assertGreaterEqual(rec.discards, 1)
+        rec.reset(forget_saved=True)
+        self.assertEqual(rec.discards, 0)
+
     def test_progress_and_reset_on_new_track(self):
         rec = TrackRecorder()
         for i in range(0, 100):

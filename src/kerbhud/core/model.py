@@ -236,6 +236,7 @@ class Snapshot:
     side_traffic: Optional[tuple[int, int]] = None  # (carros à esquerda, à direita) quando o simulador informa
     pose: Optional[PlayerPose] = None
     in_garage: Optional[bool] = None  # piloto local na garagem (None = o simulador não informa)
+    driving: Optional[bool] = None  # piloto DENTRO do carro, dirigindo (False = replay, tela de resultado, entre sessões; None = não informa)
     profile: DriverProfile = field(default_factory=DriverProfile)
     capabilities: frozenset[str] = frozenset()
     warnings: list[str] = field(default_factory=list)

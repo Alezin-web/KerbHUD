@@ -304,6 +304,7 @@ class IRacingProvider(Provider):
             sim=Sim.IRACING, connected=True, session=session, inputs=inputs, cars=cars,
             player_idx=player_idx, profile=profile, capabilities=frozenset(caps), fuel=fuel, damage=damage, tires=tires, side_traffic=side,
             in_garage=(bool(g("IsInGarage")) if g("IsInGarage") is not None else None),  # VERIFICAR no jogo
+            driving=self._driving(g("IsOnTrack"), g("IsReplayPlaying")),
             status_text="iRacing conectado",
             debug={"SessionTimeTotal": total, "SessionTimeRemain": remain,
                    "IncidentLimit(raw)": wopts.get("IncidentLimit"),
@@ -413,6 +414,14 @@ class IRacingProvider(Provider):
             return None
         pos = lambda v: float(v) if v is not None and 0 <= v < 100000 else None  # noqa: E731
         return CarDamage(repair_required_s=pos(req), repair_optional_s=pos(opt), tow_s=pos(tow))
+
+    @staticmethod
+    def _driving(on_track, replay) -> Optional[bool]:
+        """Piloto dentro do carro? `IsOnTrack` é falso na garagem, no replay e na tela entre sessões; no replay o iRacing
+        continua publicando o carro do piloto, então só `IsInGarage` não basta para esconder o overlay."""
+        if on_track is None:
+            return None
+        return bool(on_track) and not bool(replay)
 
     def _player_xy(self, buf: bytes) -> Optional[tuple[float, float]]:
         """Lat/Lon (graus) do carro do piloto -> metros, norte para cima (x = leste, z = norte)."""

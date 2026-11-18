@@ -1,3 +1,9 @@
+## 0.17.3 — Replay e Track Map no iRacing
+
+* **"Só na pista" agora vale no replay:** no iRacing, o replay, a tela de resultado e o intervalo entre sessões não contam mais como pista (nem como garagem). Com "Só na pista" ou "Só na garagem" o overlay some nessas telas; só "Sempre" e o DEMO mostram.
+* **Track Map grava em pistas com box na reta de largada** (como Navarra): o box agora ajuda a completar o traçado, em vez de impedir que ele ficasse pronto.
+* **Aviso no Track Map** quando uma volta é descartada por não fechar, em vez de ficar parado no mesmo percentual.
+
 ## 0.17.2 — Pronto para o GitHub
 
 * **Atualização sem configurar nada:** o KerbHUD já sabe onde buscar as versões novas (repositório oficial `Alezin-web/KerbHUD`). O campo *Repositório* em Config → Configurações → Atualização só precisa ser preenchido se você usar outro.

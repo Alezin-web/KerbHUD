@@ -243,7 +243,7 @@ class TestLmu(unittest.TestCase):
 
 # --------------------------------------------------------------------------- #
 IR_VARS = [  # nome, tipo irsdk, count
-    ("SessionNum", 2, 1), ("SessionTimeRemain", 5, 1), ("SessionTimeTotal", 5, 1), ("IsOnTrack", 1, 1), ("IsInGarage", 1, 1),
+    ("SessionNum", 2, 1), ("SessionTimeRemain", 5, 1), ("SessionTimeTotal", 5, 1), ("IsOnTrack", 1, 1), ("IsInGarage", 1, 1), ("IsReplayPlaying", 1, 1),
     ("FuelLevel", 4, 1), ("FuelLevelPct", 4, 1), ("PitRepairLeft", 4, 1), ("PitOptRepairLeft", 4, 1),
     ("PlayerCarTowTime", 4, 1), ("Lat", 5, 1), ("Lon", 5, 1),
     ("SessionFlags", 3, 1), ("CarLeftRight", 2, 1),
@@ -319,7 +319,7 @@ def ir_values():
     tire = [-1] * 64
     tire[3], tire[4] = 0, 1
     return {
-        "SessionNum": 0, "SessionTimeRemain": 1800.0, "SessionTimeTotal": 2700.0, "IsOnTrack": True, "IsInGarage": False,
+        "SessionNum": 0, "SessionTimeRemain": 1800.0, "SessionTimeTotal": 2700.0, "IsOnTrack": True, "IsInGarage": False, "IsReplayPlaying": False,
         "FuelLevel": 30.0, "FuelLevelPct": 0.5, "PitRepairLeft": 12.5, "PitOptRepairLeft": 4.0, "PlayerCarTowTime": 0.0,
         "Lat": -23.5, "Lon": -46.6, "SessionFlags": 0x8 | 0x20 | 0x4, "CarLeftRight": 4,
         **{f"{w}{k}": v for w, base in (("LF", 80.0), ("RF", 90.0), ("LR", 70.0), ("RR", 100.0)) for k, v in
@@ -551,6 +551,31 @@ class TestGarageState(unittest.TestCase):
         p3 = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=ir_values())))
         p3.connect()
         self.assertFalse(p3.poll().in_garage)
+
+
+class TestDrivingState(unittest.TestCase):
+    def _snap(self, **over):
+        vals = ir_values()
+        vals.update(over)
+        p = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=vals)))
+        p.connect()
+        return p.poll()
+
+    def test_driving_only_inside_the_car_and_not_in_replay(self):
+        self.assertTrue(self._snap().driving)
+        self.assertFalse(self._snap(IsOnTrack=False).driving)  # garagem, resultado, entre sessões
+        self.assertFalse(self._snap(IsReplayPlaying=True).driving)  # replay: o carro do piloto continua publicado
+        p = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=ir_values(), skip=("IsOnTrack",))))
+        p.connect()
+        self.assertIsNone(p.poll().driving)  # SDK sem a variável: comportamento antigo
+
+    def test_replay_is_neither_track_nor_garage(self):
+        from kerbhud.core import visibility as V
+        s = self._snap(IsOnTrack=False, IsReplayPlaying=True)
+        self.assertFalse(s.in_garage)
+        self.assertFalse(V.allowed("track", s) or V.allowed("garage", s))
+        self.assertTrue(V.allowed("always", s))
+        self.assertTrue(V.allowed("track", self._snap()))
 
 
 class TestDemoAndEngine(unittest.TestCase):

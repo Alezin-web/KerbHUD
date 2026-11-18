@@ -41,6 +41,8 @@ CHECKS = {
     and at("lmu", 5).profile.safety_rank == "S3"
     and len({at("lmu", t).profile.driver_rank for t in range(0, 35, 7)}) >= 4,
     "atalho_pula_para_a_proxima_etapa": lambda: _skip_changes_stage(),
+    "piloto_dirigindo_ou_fora_do_carro": lambda: at("treino", 1).driving is False and at("corrida", 5).driving is True,
+    "mapa_grava_mesmo_com_box_na_reta": lambda: _map_with_pit_on_the_straight(),
     "piloto_na_garagem": lambda: at("treino", 1).in_garage is True and at("treino", 20).in_garage is False,
     "disputas_e_voltas_a_frente_atras": lambda: max(c.laps_behind_leader for c in at("corrida", 25).cars) > 0,
     "pits_e_abandono": lambda: {CarStatus.PITS, CarStatus.OUT} <= {c.status for c in at("corrida", 25).cars},
@@ -102,6 +104,25 @@ def _map_done(stage):
     for snap in _walk(stage, 0, 35, 0.04):
         shape = rec.update(snap) or shape
     return shape is not None and len(map_cars(snap, shape)) >= 8
+
+
+def _map_with_pit_on_the_straight():
+    """Traçado volta pronto mesmo quando o box cobre a reta de largada (caso de pistas como Navarra)."""
+    import dataclasses
+    import math
+    from kerbhud.core.model import CarState, CarStatus, Inputs, SessionState, Sim, Snapshot
+    from kerbhud.core.trackmap import TrackRecorder
+    rec, shape = TrackRecorder(None), None
+    for i in range(0, 3001):
+        pct = (i / 3000) % 1.0
+        t = 2 * math.pi * pct
+        pit = pct >= 0.94 or pct < 0.07
+        me = CarState(idx=0, driver_name="me", is_player=True, lap_dist_pct=pct, world_x=500 * math.cos(t), world_z=500 * math.sin(t),
+                      status=CarStatus.PITS if pit else CarStatus.RUNNING)
+        s = Snapshot(sim=Sim.IRACING, connected=True, cars=[me], player_idx=0, inputs=Inputs(speed_ms=20.0 if pit else 60.0),
+                     session=SessionState(active=True, track_name="Navarra", track_length_m=3900.0))
+        shape = rec.update(s) or shape
+    return shape is not None
 
 
 def _fuel_view():
