@@ -1,0 +1,7 @@
+{
+  "simulator": "auto",
+  "update_hz": 60,
+  "units": "kmh",
+  "iracing": { "invert_clutch": true },
+  "lmu": { "driver_rank": null, "safety_rank": null, "contact_badge": null }
+}

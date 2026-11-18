@@ -1,0 +1,8 @@
+# dados do usuário e arquivos gerados: nunca vão para o GitHub
+dados/
+.backup/
+_update/
+dist/
+build_exe/work/
+__pycache__/
+*.pyc
