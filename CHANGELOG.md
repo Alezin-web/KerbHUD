@@ -1,3 +1,9 @@
+## 0.17.4 — Track Map do iRacing
+
+* **Track Map no iRacing sem "SEM POSIÇÃO DO CARRO":** o iRacing não publica a posição do carro, então o traçado agora é calculado por velocidade e direção. É só dar **uma volta completa**, de uma linha de largada até a próxima (o erro acumulado é corrigido pela própria volta). Os outros carros são colocados pela posição na volta.
+* Se o desenho sair **espelhado** em relação ao mapa do iRacing, ligue "Espelhar o traçado" nas opções do Track Map (config do módulo).
+* Mensagens novas no Track Map: "aguardando a linha de largada" e "volta descartada".
+
 ## 0.17.3 — Replay e Track Map no iRacing
 
 * **"Só na pista" agora vale no replay:** no iRacing, o replay, a tela de resultado e o intervalo entre sessões não contam mais como pista (nem como garagem). Com "Só na pista" ou "Só na garagem" o overlay some nessas telas; só "Sempre" e o DEMO mostram.

@@ -63,6 +63,7 @@ CAP_FLAGS = "flags"  # bandeiras mostradas ao piloto
 CAP_SIDE_TRAFFIC = "side_traffic"  # carros ao lado (o simulador informa: iRacing CarLeftRight)
 CAP_POSE = "pose"  # orientação do carro do piloto: permite achar carros ao lado e montar o radar (LMU)
 CAP_CONTACT = "contact"  # batidas e saídas de pista do piloto, contadas a partir da telemetria (LMU)
+CAP_PLAYER_XY_ESTIMATED = "player_xy_estimated"  # posição do piloto ESTIMADA por velocidade x rumo (iRacing sem Lat/Lon): só serve para gravar o traçado
 CAP_PLAYER_XY = "player_xy"  # só o carro do piloto tem coordenadas (iRacing: GPS Lat/Lon); serve para gravar o traçado
 
 

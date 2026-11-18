@@ -12,6 +12,7 @@ from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 
 from ..core.classes import class_style, text_on
 from ..core.smooth import PointSmoother
+from ..core.model import CAP_PLAYER_XY_ESTIMATED
 from ..core.trackmap import MapCar, TrackRecorder, TrackStore, map_cars
 from ..core.i18n import tr
 from . import theme
@@ -82,6 +83,8 @@ class TrackMapModule(ModuleWindow):
             pct = int(rec.progress * 100)
             if snap.player() is None or snap.player().world_x is None:
                 self._msg(p, w, h, tr("SEM POSIÇÃO DO CARRO\npara gravar o traçado"))
+            elif CAP_PLAYER_XY_ESTIMATED in snap.capabilities and not pct and not rec.discards:
+                self._msg(p, w, h, tr("AGUARDANDO A LINHA DE LARGADA\npara gravar uma volta completa"))
             elif rec.discards:
                 self._msg(p, w, h, tr("VOLTA DESCARTADA (não fechou)\ndê outra volta limpa  {}%").format(pct))
             else:

@@ -35,9 +35,9 @@ from typing import Optional
 
 from ..core.model import (
     CAP_BEST_LAST_LAP, CAP_CAR_MODEL, CAP_CAR_NUMBER, CAP_CLASS, CAP_ENERGY, CAP_GAPS, CAP_INCIDENTS,
-    CAP_CONTACT, CAP_DAMAGE, CAP_FLAGS, CAP_FUEL, CAP_POSE, CAP_SIDE_TRAFFIC, CAP_TIRE_DETAIL, CAP_INPUTS, CAP_PLAYER_XY,
+    CAP_CONTACT, CAP_DAMAGE, CAP_FLAGS, CAP_FUEL, CAP_POSE, CAP_SIDE_TRAFFIC, CAP_TIRE_DETAIL, CAP_INPUTS,
     CAP_PROFILE_IRATING, CAP_PROFILE_LICENSE, CAP_SHIFT_LIGHTS_DERIVED, CAP_STANDINGS,
-    CAP_STEERING_ANGLE, CAP_TIRE, CAP_TRACKMAP_PCT, CAP_TRACKMAP_XY, CarState, CarStatus,
+    CAP_PLAYER_XY_ESTIMATED, CAP_STEERING_ANGLE, CAP_TIRE, CAP_TRACKMAP_PCT, CAP_TRACKMAP_XY, CarState, CarStatus,
     CarDamage, ContactState, PlayerPose, TIRE_CORNERS, TireSet, TireWheel, DriverProfile, FuelState, Inputs, ProfileSource, SessionState, Sim, Snapshot,
 )
 from .base import Provider
@@ -223,6 +223,7 @@ DEMO_FEATURES: dict[str, str] = {
     "piloto_na_garagem": "treino",
     "piloto_dirigindo_ou_fora_do_carro": "treino",
     "mapa_grava_mesmo_com_box_na_reta": "box",
+    "mapa_por_posicao_estimada_iracing": "corrida",
     "atalho_pula_para_a_proxima_etapa": "treino",
     "disputas_e_voltas_a_frente_atras": "corrida",
     "pits_e_abandono": "corrida",
@@ -253,6 +254,12 @@ DEMO_FEATURES: dict[str, str] = {
 TOUR = ["treino", "quali", "corrida", "box", "monoclasse", "formulas", "poucos", "sem_nrg", "lmu"]
 SCENARIOS: dict[str, str] = {"tour": "Roteiro completo (todas as etapas, em ciclo)",
                              **{k: s.label for k, s in STAGES.items()}}
+
+
+def _estimated_xy(x: float, z: float, distance_m: float) -> tuple[float, float]:
+    """Como o iRacing de verdade: a posição do piloto é ESTIMADA (velocidade x rumo), começa numa origem qualquer e
+    acumula deriva. O DEMO imita isso (origem deslocada + deriva de 0,4%) para exercitar o mesmo caminho do traçado."""
+    return x + 1234.5 + 0.004 * distance_m, z - 987.6 - 0.003 * distance_m
 
 
 def _track_xy(pct: float) -> tuple[float, float]:
@@ -422,6 +429,7 @@ class DemoProvider(Provider):
                 step = speed * st.time_scale * LMU_UPDATE_S  # (o DEMO corre em tempo acelerado)
                 pct = (math.floor(d / step) * step / TRACK_LEN) % 1.0
             x, z = _track_xy(pct)
+            true_x, true_z = x, z
             if k in sides:  # emparelhado: deslocado para o lado do piloto
                 lx, lz = _left(_dir(pct))
                 off = LANE_M if sides[k] == "left" else -LANE_M
@@ -467,8 +475,8 @@ class DemoProvider(Provider):
                 tire=_TIRES[slot % len(_TIRES)] if e.cls != "ff" else None,
                 energy_pct=energy, vehicle_raw=e.model,
                 country=None if st.lmu_style else e.country,
-                world_x=x if (st.lmu_style or k == player_key) else None,
-                world_z=z if (st.lmu_style or k == player_key) else None,
+                world_x=x if st.lmu_style else (_estimated_xy(true_x, true_z, d)[0] if k == player_key else None),
+                world_z=z if st.lmu_style else (_estimated_xy(true_x, true_z, d)[1] if k == player_key else None),
             ))
         # posição na classe, pela posição geral
         for c in sorted(cars, key=lambda c: c.position or 0):
@@ -502,7 +510,7 @@ class DemoProvider(Provider):
             flags=flags)
         caps = {CAP_STANDINGS, CAP_GAPS, CAP_BEST_LAST_LAP, CAP_CAR_NUMBER, CAP_CAR_MODEL, CAP_CLASS, CAP_INPUTS,
                 CAP_STEERING_ANGLE, CAP_SHIFT_LIGHTS_DERIVED, CAP_TRACKMAP_PCT, CAP_TIRE, CAP_FUEL}
-        caps.add(CAP_TRACKMAP_XY if st.lmu_style else CAP_PLAYER_XY)
+        caps.add(CAP_TRACKMAP_XY if st.lmu_style else CAP_PLAYER_XY_ESTIMATED)
         if st.damage:
             caps.add(CAP_DAMAGE)
         if st.lmu_style:

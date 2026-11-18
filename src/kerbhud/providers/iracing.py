@@ -23,10 +23,11 @@ from ..core.model import (
     CAP_BEST_LAST_LAP, CAP_CAR_MODEL, CAP_CAR_NUMBER, CAP_CLASS, CAP_GAPS, CAP_INCIDENTS, CAP_INPUTS,
     CAP_PROFILE_IRATING, CAP_PROFILE_LICENSE, CAP_SHIFT_LIGHTS_DERIVED,
     CAP_SHIFT_LIGHTS_SIM, CAP_STANDINGS, CAP_STEERING_ANGLE, CAP_TIRE, CAP_TRACKMAP_PCT, CAP_DAMAGE, CAP_FUEL,
-    CAP_FLAGS, CAP_PLAYER_XY, CAP_SIDE_TRAFFIC, CAP_TIRE_DETAIL, CarDamage, CarState, FuelState,
+    CAP_FLAGS, CAP_PLAYER_XY, CAP_PLAYER_XY_ESTIMATED, CAP_SIDE_TRAFFIC, CAP_TIRE_DETAIL, CarDamage, CarState, FuelState,
     TIRE_CORNERS, TireSet, TireWheel,
     CarStatus, DriverProfile, Inputs, ProfileSource, SessionState, Sim, Snapshot,
 )
+from ..core.deadreckon import DeadReckoner
 from ..core.flags import country_code
 from .base import Provider, ProviderDisconnected
 from .session_yaml import as_float, as_int, parse_session_yaml
@@ -97,6 +98,7 @@ class IRacingProvider(Provider):
         self._sess_update = -1
         self._yaml: dict[str, Any] = {}
         self._drivers: dict[int, dict] = {}
+        self._dead_reckoning = DeadReckoner()  # posição estimada: o iRacing normal não publica Lat/Lon
         # VERIFICAR: ClutchRaw do iRacing vale 1.0 com o pedal solto. Se na sua
         # configuração for o contrário, desligue em settings (invert_clutch=false).
         self._invert_clutch = invert_clutch
@@ -134,6 +136,7 @@ class IRacingProvider(Provider):
         self._sess_update = -1
         self._yaml = {}
         self._drivers = {}
+        self._dead_reckoning.reset()
 
     # ------------------------------------------------------------------ #
     def _header(self) -> tuple:
@@ -281,8 +284,13 @@ class IRacingProvider(Provider):
         if side is not None:
             caps.add(CAP_SIDE_TRAFFIC)
         xy = self._player_xy(buf)
-        if xy is not None:  # o iRacing só dá GPS do carro do piloto: serve para gravar o traçado
+        if xy is not None:  # GPS do carro do piloto (só em builds de depuração do iRacing): serve para gravar o traçado
             caps.add(CAP_PLAYER_XY)
+        else:  # o normal: sem Lat/Lon. Estima o caminho por velocidade x rumo (o traçado corrige a deriva)
+            xy = self._dead_reckoning.update(g("SessionTime"), g("Speed"), g("YawNorth"))
+            if xy is not None:
+                caps.add(CAP_PLAYER_XY_ESTIMATED)
+        if xy is not None:
             for c in cars:
                 if c.is_player:
                     c.world_x, c.world_z = xy
@@ -309,7 +317,10 @@ class IRacingProvider(Provider):
             debug={"SessionTimeTotal": total, "SessionTimeRemain": remain,
                    "IncidentLimit(raw)": wopts.get("IncidentLimit"),
                    "PlayerCarMyIncidentCount": inc,
-                   "CarIdxTireCompound(presente)": "CarIdxTireCompound" in self._vars},
+                   "CarIdxTireCompound(presente)": "CarIdxTireCompound" in self._vars,
+                   "posicao_do_carro": ("GPS Lat/Lon" if CAP_PLAYER_XY in caps else
+                                        "estimada (Speed+YawNorth)" if CAP_PLAYER_XY_ESTIMATED in caps else
+                                        "indisponível (faltam Lat/Lon e YawNorth/SessionTime)")},
         )
 
     # ------------------------------------------------------------------ #

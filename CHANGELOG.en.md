@@ -1,3 +1,9 @@
+## 0.17.4 — iRacing Track Map
+
+* **Track Map on iRacing without "SEM POSIÇÃO DO CARRO":** iRacing does not publish the car position, so the outline is now computed from speed and heading. Just drive **one full lap**, from one start line to the next (the accumulated error is corrected by the lap itself). Other cars are placed by their lap position.
+* If the drawing comes out **mirrored** compared with the iRacing map, turn on "Mirror the track outline" in the Track Map options (module config).
+* New Track Map messages: "waiting for the start line" and "lap discarded".
+
 ## 0.17.3 — Replay and Track Map on iRacing
 
 * **"On track only" now works in replays:** on iRacing, the replay, the results screen and the gap between sessions no longer count as track (or garage). With "On track only" or "In the garage only" the overlay hides on those screens; only "Always" and DEMO show.

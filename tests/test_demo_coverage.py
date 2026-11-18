@@ -42,6 +42,7 @@ CHECKS = {
     and len({at("lmu", t).profile.driver_rank for t in range(0, 35, 7)}) >= 4,
     "atalho_pula_para_a_proxima_etapa": lambda: _skip_changes_stage(),
     "piloto_dirigindo_ou_fora_do_carro": lambda: at("treino", 1).driving is False and at("corrida", 5).driving is True,
+    "mapa_por_posicao_estimada_iracing": lambda: _estimated_map_ok(),
     "mapa_grava_mesmo_com_box_na_reta": lambda: _map_with_pit_on_the_straight(),
     "piloto_na_garagem": lambda: at("treino", 1).in_garage is True and at("treino", 20).in_garage is False,
     "disputas_e_voltas_a_frente_atras": lambda: max(c.laps_behind_leader for c in at("corrida", 25).cars) > 0,
@@ -104,6 +105,23 @@ def _map_done(stage):
     for snap in _walk(stage, 0, 35, 0.04):
         shape = rec.update(snap) or shape
     return shape is not None and len(map_cars(snap, shape)) >= 8
+
+
+def _estimated_map_ok():
+    """DEMO no estilo iRacing: só o piloto tem posição, e ela é estimada (origem deslocada + deriva); o mapa fecha mesmo assim."""
+    import math
+    from kerbhud.core.model import CAP_PLAYER_XY_ESTIMATED
+    from kerbhud.core.trackmap import TrackRecorder
+    first = at("corrida", 5)
+    if CAP_PLAYER_XY_ESTIMATED not in first.capabilities or any(c.world_x is not None for c in first.cars if not c.is_player):
+        return False
+    rec, shape = TrackRecorder(None), None
+    for s in _walk("corrida", 0, 35, 0.04):
+        shape = rec.update(s) or shape
+    if shape is None:
+        return False
+    (x0, y0), (x1, y1) = shape.xy_at(0.0), shape.xy_at(0.9975)
+    return math.hypot(x1 - x0, y1 - y0) < 60.0
 
 
 def _map_with_pit_on_the_straight():

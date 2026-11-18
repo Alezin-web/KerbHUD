@@ -88,7 +88,7 @@ Vindo do **SimOverlay**? Suas configurações e pastas de dados são **copiadas*
 
 ### ⚠️ Limitações conhecidas
 
-Alguns nomes de variáveis do iRacing e parte do mapeamento de bandeiras/lados do LMU ainda precisam ser confirmados em corridas reais (marcados *VERIFICAR* no código). O radar do iRacing sabe a distância dos outros carros, mas não o lado exato ("lado estimado"). Retorno de corridas é muito bem-vindo.
+Alguns nomes de variáveis do iRacing e parte do mapeamento de bandeiras/lados do LMU ainda precisam ser confirmados em corridas reais (marcados *VERIFICAR* no código). O radar do iRacing sabe a distância dos outros carros, mas não o lado exato ("lado estimado"). No iRacing o Track Map desenha o circuito a partir de **uma volta completa sua** (o jogo não publica a posição, então o caminho é calculado por velocidade e direção); se ele sair espelhado, use "Espelhar o traçado" nas opções do módulo. Retorno de corridas é muito bem-vindo.
 
 <details>
 <summary><b>🛠️ Para desenvolvedores</b></summary>
@@ -178,7 +178,7 @@ Coming from **SimOverlay**? Your settings and data folders are **copied** automa
 
 ### ⚠️ Known limits
 
-Some iRacing variable names and some LMU flag/side mappings still need confirmation in real races (marked *VERIFY* in the code). The iRacing radar knows the distance to other cars but not the exact side ("estimated side"). Feedback from races is welcome.
+Some iRacing variable names and some LMU flag/side mappings still need confirmation in real races (marked *VERIFY* in the code). The iRacing radar knows the distance to other cars but not the exact side ("estimated side"). On iRacing the Track Map draws the circuit from **one full lap of yours** (the game does not publish the position, so the path is computed from speed and heading); if it comes out mirrored, use "Mirror the track outline" in the module options. Feedback from races is welcome.
 
 <details>
 <summary><b>🛠️ For developers</b></summary>

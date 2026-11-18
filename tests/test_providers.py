@@ -250,7 +250,7 @@ IR_VARS = [  # nome, tipo irsdk, count
     *[(f"{w}{k}", 4, 1) for w in ("LF", "RF", "LR", "RR") for k in
       ("tempL", "tempM", "tempR", "wearL", "wearM", "wearR", "pressure")],
     ("PlayerCarMyIncidentCount", 2, 1), ("CarIdxTireCompound", 2, 64),
-    ("Speed", 4, 1), ("RPM", 4, 1), ("Gear", 2, 1),
+    ("Speed", 4, 1), ("RPM", 4, 1), ("Gear", 2, 1), ("SessionTime", 5, 1), ("YawNorth", 4, 1),
     ("ThrottleRaw", 4, 1), ("BrakeRaw", 4, 1), ("ClutchRaw", 4, 1),
     ("SteeringWheelAngle", 4, 1), ("SteeringWheelAngleMax", 4, 1),
     ("CarIdxLapDistPct", 4, 64), ("CarIdxLapCompleted", 2, 64), ("CarIdxPosition", 2, 64),
@@ -326,7 +326,7 @@ def ir_values():
            (("tempL", base), ("tempM", base + 3), ("tempR", base + 6), ("wearL", 0.9), ("wearM", 0.8),
             ("wearR", 0.7), ("pressure", 190.0))},
         "PlayerCarMyIncidentCount": 6, "CarIdxTireCompound": tire,
-        "Speed": 50.0, "RPM": 6500.0, "Gear": 3,
+        "Speed": 50.0, "RPM": 6500.0, "Gear": 3, "SessionTime": 100.0, "YawNorth": 0.5,
         "ThrottleRaw": 0.8, "BrakeRaw": 0.1, "ClutchRaw": 1.0,
         "SteeringWheelAngle": math.radians(90), "SteeringWheelAngleMax": math.radians(450),
         "CarIdxLapDistPct": pct, "CarIdxLapCompleted": lapc, "CarIdxPosition": pos,
@@ -529,7 +529,7 @@ class TestFuelDamageAndMapData(unittest.TestCase):
         self.assertTrue(all(c.world_x is None for c in others))  # só o piloto tem GPS
 
     def test_iracing_without_those_variables(self):
-        skip = ("FuelLevel", "FuelLevelPct", "PitRepairLeft", "PitOptRepairLeft", "PlayerCarTowTime", "Lat", "Lon")
+        skip = ("FuelLevel", "FuelLevelPct", "PitRepairLeft", "PitOptRepairLeft", "PlayerCarTowTime", "Lat", "Lon", "YawNorth")
         p = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=ir_values(), skip=skip)))
         p.connect()
         s = p.poll()

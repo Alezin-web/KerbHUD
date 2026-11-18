@@ -2,8 +2,9 @@
 
 O traçado NUNCA é genérico: é desenhado com as coordenadas reais do circuito carregado.
 * LMU: coordenadas de mundo (x, z) de cada carro (`CarState.world_x/world_z`).
-* iRacing: só o carro do piloto tem posição (GPS Lat/Lon). A primeira volta limpa grava o traçado; os outros carros
-  são colocados nele pela posição percentual da volta (`lap_dist_pct`).
+* iRacing: só o carro do piloto tem posição, e ela é ESTIMADA (velocidade x rumo, `core/deadreckon.py`; o jogo normal não
+  publica Lat/Lon). Uma volta limpa de uma linha de largada à próxima grava o traçado e a deriva é distribuída pela volta.
+  Os outros carros são colocados nele pela posição percentual da volta (`lap_dist_pct`).
 Depois de gravado, o traçado fica salvo em `<config>/tracks/<pista>.json` e volta pronto nas próximas sessões.
 Convenção: norte para cima (y de tela = -z do mundo). Se algum simulador vier espelhado, há a opção "Espelhar".
 """
@@ -16,10 +17,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from .model import CarState, CarStatus, Sim, Snapshot
+from .model import CAP_PLAYER_XY_ESTIMATED, CarState, CarStatus, Sim, Snapshot
 
 BINS = 400  # pontos do traçado (um a cada 0,25% da volta)
 COMPLETE_AT = 0.97  # fração da volta que precisa ter sido coberta
+MAX_HOLE_BINS = 12  # volta estimada: maior trecho sem amostra aceito (3% da volta)
 MIN_TRACK = 0.80  # o box só tapa buracos: pelo menos isto da volta tem que ter sido gravado na pista de verdade
 MIN_SPEED_MS = 3.0  # abaixo disso (boxes, rodada) não grava
 MAX_CLOSURE = 0.10  # distância entre o fim e o começo, como fração do tamanho do circuito
@@ -103,6 +105,8 @@ class TrackRecorder:
     _key: Optional[str] = None
     _sum: list = field(default_factory=lambda: [[0.0, 0.0, 0] for _ in range(BINS)])
     _pit: list = field(default_factory=lambda: [[0.0, 0.0, 0] for _ in range(BINS)])  # box em movimento: só tapa buracos
+    _lap: Optional[list] = None  # posição estimada: amostras (pct, x, z) da volta em curso, a partir da linha de largada
+    _last_pct: Optional[float] = None
 
     def reset(self, forget_saved: bool = False) -> None:
         if forget_saved and self.store and self._key:
@@ -110,6 +114,7 @@ class TrackRecorder:
         self.shape, self.progress = None, 0.0
         self._sum = [[0.0, 0.0, 0] for _ in range(BINS)]
         self._pit = [[0.0, 0.0, 0] for _ in range(BINS)]
+        self._lap, self._last_pct = None, None
         self.discards = 0
         if not forget_saved:
             self._key = None
@@ -128,6 +133,8 @@ class TrackRecorder:
             return None
         if me.status not in (CarStatus.RUNNING, CarStatus.PITS) or not me.in_session:
             return None
+        if CAP_PLAYER_XY_ESTIMATED in snap.capabilities:
+            return self._update_estimated(snap, me)
         if snap.inputs is not None and snap.inputs.speed_ms < MIN_SPEED_MS:
             return None
         b = int((me.lap_dist_pct % 1.0) * BINS) % BINS
@@ -141,6 +148,70 @@ class TrackRecorder:
         if on_track >= MIN_TRACK and union >= COMPLETE_AT:
             self._finish(snap)
         return self.shape
+
+    # ---- posição estimada (iRacing) ------------------------------------- #
+    def _update_estimated(self, snap: Snapshot, me: CarState) -> Optional[TrackShape]:
+        """Grava UMA volta limpa, da linha de largada até a próxima. A posição estimada acumula erro, então só vale
+        relativa ao começo da volta; o erro final é distribuído linearmente pela volta (fecha o circuito)."""
+        pct = me.lap_dist_pct % 1.0  # type: ignore[operator]
+        ok = (me.status == CarStatus.RUNNING and me.in_session and snap.driving is not False
+              and (snap.inputs is None or snap.inputs.speed_ms >= MIN_SPEED_MS))
+        last, self._last_pct = self._last_pct, (pct if ok else None)
+        if not ok:
+            self._lap = None  # box, parado, replay: a volta em curso não vale
+            self.progress = 0.0
+            return None
+        crossed = last is not None and last > 0.9 and pct < 0.1
+        if last is not None and not crossed and not (-0.002 <= pct - last <= 0.03):
+            self._lap = None  # voltou, teletransportou ou deu um salto na volta: descarta
+        if crossed:
+            if self._lap is not None:
+                self._close_estimated_lap(snap, pct, me.world_x, me.world_z)
+                if self.shape is not None:
+                    return self.shape
+            self._lap = []
+        if self._lap is not None:
+            self._lap.append((pct, me.world_x, me.world_z))
+            if self._lap:
+                self.progress = min(1.0, (pct - self._lap[0][0]) % 1.0)
+        else:
+            self.progress = 0.0
+        return self.shape
+
+    @staticmethod
+    def _longest_hole(filled: set) -> int:
+        """Maior sequência de trechos SEM amostra na volta (circular). Buracos pequenos entre amostras vizinhas são
+        interpolados sem inventar nada (o carro andou continuamente); um buraco grande não."""
+        if not filled:
+            return BINS
+        ordered = sorted(filled)
+        gaps = [(b - a - 1) for a, b in zip(ordered, ordered[1:])] + [ordered[0] + BINS - ordered[-1] - 1]
+        return max(gaps)
+
+    def _close_estimated_lap(self, snap: Snapshot, end_pct: float, end_x: float, end_z: float) -> None:
+        lap, self._lap = self._lap or [], None
+        key = self._key
+        p0, x0, z0 = lap[0] if lap else (0.0, 0.0, 0.0)
+        span = (1.0 + end_pct) - p0
+        ex, ez = end_x - x0, end_z - z0  # quanto o fim ficou longe do começo: é a deriva da volta
+        filled = {int(p * BINS) % BINS for p, _x, _z in lap}
+        track_len = snap.session.track_length_m or 0.0
+        if len(lap) < 2 or span <= 0.5 or self._longest_hole(filled) > MAX_HOLE_BINS or (
+                track_len and math.hypot(ex, ez) > MAX_CLOSURE * 2 * track_len):
+            self.discards += 1  # volta curta, com buraco grande ou com deriva demais para confiar
+            return
+        self._sum = [[0.0, 0.0, 0] for _ in range(BINS)]
+        for p, x, z in lap:
+            f = ((p - p0) % 1.0) / span  # fração da volta (0 no começo, ~1 no fim)
+            acc = self._sum[int(p * BINS) % BINS]
+            acc[0] += (x - x0) - ex * f
+            acc[1] += -((z - z0) - ez * f)  # norte para cima
+            acc[2] += 1
+        pts = self._interpolated()
+        self._pit = [[0.0, 0.0, 0] for _ in range(BINS)]
+        self.shape = TrackShape(key or "", snap.session.track_name or "", pts)
+        if self.store:
+            self.store.save(self.shape)
 
     def _finish(self, snap: Snapshot) -> None:
         pts = self._interpolated()
@@ -197,8 +268,8 @@ def map_cars(snap: Snapshot, shape: TrackShape) -> list[MapCar]:
     for c in snap.cars:
         if not c.in_session or c.status in (CarStatus.OUT, CarStatus.GARAGE, CarStatus.DISQUALIFIED):
             continue
-        if c.world_x is not None and c.world_z is not None:
-            x, y = c.world_x, -c.world_z
+        if c.world_x is not None and c.world_z is not None and CAP_PLAYER_XY_ESTIMATED not in snap.capabilities:
+            x, y = c.world_x, -c.world_z  # (estimada: fica fora do traçado, então todos os carros vão pela volta percentual)
         elif c.lap_dist_pct is not None:
             x, y = shape.xy_at(c.lap_dist_pct)
         else:
