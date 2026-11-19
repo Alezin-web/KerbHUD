@@ -24,7 +24,7 @@ DEFAULT_SETTINGS = {
     "visibility": "always",  # always | track | garage (cada módulo pode ter a sua: options.show_when)
     "demo_scenario": "tour",  # cenário do modo DEMO (tour = roteiro completo)
     "units": "kmh",
-    "iracing": {"invert_clutch": True},
+    "iracing": {"invert_clutch": True, "live_positions": True},
     "lmu": {"driver_rank": None, "safety_rank": None, "contact_badge": None},
     "ui_hz": 30,
     "logo_wordmark": True,  # sem arquivo de logo: mostra o nome da fabricante em texto (false = nada)
@@ -80,7 +80,8 @@ def update_settings_file(path: Path, key: str, value) -> None:
 
 def build_providers(settings: dict) -> dict[str, Provider]:
     return {
-        "iracing": IRacingProvider(invert_clutch=bool(settings["iracing"].get("invert_clutch", True))),
+        "iracing": IRacingProvider(invert_clutch=bool(settings["iracing"].get("invert_clutch", True)),
+                                   live_positions=bool(settings["iracing"].get("live_positions", True))),
         "lmu": LmuProvider(manual_ranks=settings["lmu"]),
         "demo": DemoProvider(str(settings.get("demo_scenario", "tour"))),
     }
@@ -129,6 +130,7 @@ class Engine:
             prov = self._providers.get("iracing")
             if prov is not None and hasattr(prov, "_invert_clutch"):
                 prov._invert_clutch = bool(self.settings["iracing"].get("invert_clutch", True))
+                prov._live_positions = bool(self.settings["iracing"].get("live_positions", True))
         # update_hz é lido a cada reconexão; `lmu` (ranks) é o mesmo dict do provedor, já vale
 
     def demo_next_stage(self) -> None:

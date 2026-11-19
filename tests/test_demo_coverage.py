@@ -42,6 +42,7 @@ CHECKS = {
     and len({at("lmu", t).profile.driver_rank for t in range(0, 35, 7)}) >= 4,
     "atalho_pula_para_a_proxima_etapa": lambda: _skip_changes_stage(),
     "piloto_dirigindo_ou_fora_do_carro": lambda: at("treino", 1).driving is False and at("corrida", 5).driving is True,
+    "posicao_ao_vivo_na_corrida": lambda: _live_order_matches_positions(),
     "mapa_por_posicao_estimada_iracing": lambda: _estimated_map_ok(),
     "mapa_grava_mesmo_com_box_na_reta": lambda: _map_with_pit_on_the_straight(),
     "piloto_na_garagem": lambda: at("treino", 1).in_garage is True and at("treino", 20).in_garage is False,
@@ -105,6 +106,18 @@ def _map_done(stage):
     for snap in _walk(stage, 0, 35, 0.04):
         shape = rec.update(snap) or shape
     return shape is not None and len(map_cars(snap, shape)) >= 8
+
+
+def _live_order_matches_positions():
+    """A posição mostrada na corrida segue a ordem na pista (voltas + fração), como a "posição ao vivo" do iRacing."""
+    from kerbhud.core.liveorder import LiveOrder
+    for t in (6, 12, 18, 24, 30):
+        s = at("corrida", t)
+        live = LiveOrder().order(s.cars)
+        shown = [c.idx for c in sorted((c for c in s.cars if c.position and c.idx in live), key=lambda c: c.position)]
+        if len(live) < 5 or live != shown:
+            return False
+    return True
 
 
 def _estimated_map_ok():

@@ -29,6 +29,8 @@ from ..core.model import (
 )
 from ..core.deadreckon import DeadReckoner
 from ..core.flags import country_code
+from ..core.liveorder import LiveOrder
+from ..core.textfmt import is_race
 from .base import Provider, ProviderDisconnected
 from .session_yaml import as_float, as_int, parse_session_yaml
 
@@ -89,7 +91,7 @@ def _hex_color(v: Any) -> Optional[str]:
 class IRacingProvider(Provider):
     sim = Sim.IRACING
 
-    def __init__(self, opener: Optional[Opener] = None, invert_clutch: bool = True):
+    def __init__(self, opener: Optional[Opener] = None, invert_clutch: bool = True, live_positions: bool = True):
         self._opener: Opener = opener or (lambda: open_named_mapping(IRSDK_MEMMAP_NAME))
         self._mem: Optional[MemoryView] = None
         self._vars: dict[str, VarHeader] = {}
@@ -102,6 +104,8 @@ class IRacingProvider(Provider):
         # VERIFICAR: ClutchRaw do iRacing vale 1.0 com o pedal solto. Se na sua
         # configuração for o contrário, desligue em settings (invert_clutch=false).
         self._invert_clutch = invert_clutch
+        self._live_positions = live_positions  # corrida: ordem pela posição na pista, não pela oficial (que só muda na linha)
+        self._live_order = LiveOrder()
 
     # ------------------------------------------------------------------ #
     def hint(self) -> str:
@@ -137,6 +141,7 @@ class IRacingProvider(Provider):
         self._yaml = {}
         self._drivers = {}
         self._dead_reckoning.reset()
+        self._live_order.reset()
 
     # ------------------------------------------------------------------ #
     def _header(self) -> tuple:
@@ -260,7 +265,7 @@ class IRacingProvider(Provider):
         )
 
         player_idx = as_int(dinfo.get("DriverCarIdx"))
-        cars = self._cars(buf, player_idx)
+        cars = self._cars(buf, player_idx, live=self._live_positions and is_race(session_type))
         caps = {CAP_STANDINGS, CAP_BEST_LAST_LAP, CAP_CLASS, CAP_TRACKMAP_PCT, CAP_CAR_NUMBER,
                 CAP_CAR_MODEL, CAP_PROFILE_IRATING, CAP_PROFILE_LICENSE}
         if any(c.gap_leader is not None for c in cars):
@@ -324,7 +329,7 @@ class IRacingProvider(Provider):
         )
 
     # ------------------------------------------------------------------ #
-    def _cars(self, buf: bytes, player_idx: Optional[int]) -> list[CarState]:
+    def _cars(self, buf: bytes, player_idx: Optional[int], live: bool = False) -> list[CarState]:
         g = lambda name: self._get(buf, name)  # noqa: E731
         pct = g("CarIdxLapDistPct") or []
         lap_done = g("CarIdxLapCompleted") or []
@@ -382,6 +387,12 @@ class IRacingProvider(Provider):
                 vehicle_raw=" ".join(x for x in (d.get("CarPath"), d.get("CarScreenName")) if x) or None,
                 country=country_code(d.get("FlairName")),  # VERIFICAR: "flair" = país do piloto no iRacing
             ))
+
+        # Corrida: a posição oficial só muda na linha de chegada; a ordem ao vivo vem da posição na pista.
+        if live:
+            self._live_order.apply(cars)
+        else:
+            self._live_order.reset()
 
         # Sem posição publicada (comum em treino): ordena pela melhor volta real.
         if cars and all(c.position is None for c in cars):

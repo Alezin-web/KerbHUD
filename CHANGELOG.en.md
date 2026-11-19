@@ -1,3 +1,9 @@
+## 0.17.5 — Live position on iRacing
+
+* **Live Standings and Relative in iRacing races:** the official iRacing position only changes when a car crosses the finish line. Now, in a **race**, KerbHUD works out the order from each car's position on track (completed laps + part of the current lap), so overtakes show up right away.
+* You can go back to the official position in Config → Settings → "iRacing: live race position".
+* Nothing changes in practice and qualifying: there the order is by best lap, which only changes when someone completes a lap.
+
 ## 0.17.4 — iRacing Track Map
 
 * **Track Map on iRacing without "SEM POSIÇÃO DO CARRO":** iRacing does not publish the car position, so the outline is now computed from speed and heading. Just drive **one full lap**, from one start line to the next (the accumulated error is corrected by the lap itself). Other cars are placed by their lap position.

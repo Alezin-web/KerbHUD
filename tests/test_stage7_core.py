@@ -47,6 +47,9 @@ class TestValidate(unittest.TestCase):
         self.assertEqual(clean["my_country"], "br")
         self.assertEqual(clean["lmu"], {"driver_rank": "B2", "safety_rank": "S3", "contact_badge": "Trusted"})
         self.assertEqual(clean["iracing"], {"invert_clutch": False})
+        clean2, _ = validate_patch({"iracing": {"live_positions": False}}, DEFAULT_SETTINGS)
+        self.assertEqual(clean2["iracing"], {"live_positions": False})
+        self.assertTrue(settings_to_patch(DEFAULT_SETTINGS)["iracing"]["live_positions"])
 
     def test_bad_values_are_reported_and_not_returned(self):
         clean, errors = validate_patch({"simulator": "rfactor", "update_hz": 7, "units": "furlong",

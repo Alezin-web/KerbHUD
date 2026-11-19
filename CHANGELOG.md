@@ -1,3 +1,9 @@
+## 0.17.5 — Posição ao vivo no iRacing
+
+* **Standings e Relative em tempo real na corrida do iRacing:** a posição oficial do iRacing só muda quando o carro cruza a linha de chegada. Agora, na **corrida**, o KerbHUD calcula a ordem pela posição de cada carro na pista (voltas completas + parte da volta), então as ultrapassagens aparecem na hora.
+* Dá para voltar à posição oficial em Config → Configurações → "iRacing: posição ao vivo na corrida".
+* No treino e na classificação nada muda: lá a ordem é pela melhor volta, que só muda quando alguém completa uma volta.
+
 ## 0.17.4 — Track Map do iRacing
 
 * **Track Map no iRacing sem "SEM POSIÇÃO DO CARRO":** o iRacing não publica a posição do carro, então o traçado agora é calculado por velocidade e direção. É só dar **uma volta completa**, de uma linha de largada até a próxima (o erro acumulado é corrigido pela própria volta). Os outros carros são colocados pela posição na volta.

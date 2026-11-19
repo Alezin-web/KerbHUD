@@ -76,6 +76,7 @@ TRANSLATIONS: dict[str, str] = {
     "ex.: br  (vazio = não mostrar)": "e.g. br  (empty = don't show)",
     "Mostrar o nome da fabricante quando não houver logo": "Show the manufacturer name when there is no logo",
     "iRacing: embreagem invertida (100% = solta)": "iRacing: inverted clutch (100% = released)",
+    "iRacing: posição ao vivo na corrida (em vez de só ao cruzar a linha)": "iRacing: live race position (instead of only when crossing the line)",
     "Idioma / Language": "Idioma / Language", "Mostrar o overlay": "Show the overlay",
     "Leitura dos dados": "Data reading rate", "Atualização da tela": "Screen refresh", "Meu país (bandeira)": "My country (flag)",
     "Trocar o simulador reconecta na hora. A leitura dos dados só muda ao reconectar.": "Changing the simulator reconnects immediately. The data reading rate only changes on reconnect.",

@@ -119,8 +119,10 @@ def validate_patch(patch: dict, current: Optional[dict] = None) -> tuple[dict, l
         else:
             errors.append("Repositório de atualização: use usuario/repositorio (ex.: alex/KerbHUD)")
 
-    if isinstance(patch.get("iracing"), dict) and "invert_clutch" in patch["iracing"]:
-        out["iracing"] = {"invert_clutch": bool(patch["iracing"]["invert_clutch"])}
+    if isinstance(patch.get("iracing"), dict):
+        ir = {k: bool(patch["iracing"][k]) for k in ("invert_clutch", "live_positions") if k in patch["iracing"]}
+        if ir:
+            out["iracing"] = ir
 
     if isinstance(patch.get("lmu"), dict):
         lmu: dict[str, Any] = {}
@@ -198,7 +200,7 @@ def settings_to_patch(settings: dict) -> dict:
         "my_country": settings.get("my_country") or "",
         "language": settings.get("language", "auto"),
         "update_repo": settings.get("update_repo") or "", "check_updates_on_start": bool(settings.get("check_updates_on_start", True)),
-        "iracing": {"invert_clutch": bool((settings.get("iracing") or {}).get("invert_clutch", True))},
+        "iracing": {k: bool((settings.get("iracing") or {}).get(k, True)) for k in ("invert_clutch", "live_positions")},
         "lmu": {k: (settings.get("lmu") or {}).get(k) or "" for k in ("driver_rank", "safety_rank", "contact_badge")},
         "hotkeys": {**DEFAULT_HOTKEYS, **(settings.get("hotkeys") or {})},
     }

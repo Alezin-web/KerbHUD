@@ -151,6 +151,8 @@ class SettingsDialog(QDialog):
         self.wordmark.setChecked(bool(init["logo_wordmark"]))
         self.invert_clutch = QCheckBox(tr("iRacing: embreagem invertida (100% = solta)"))
         self.invert_clutch.setChecked(bool(init["iracing"]["invert_clutch"]))
+        self.live_positions = QCheckBox(tr("iRacing: posição ao vivo na corrida (em vez de só ao cruzar a linha)"))
+        self.live_positions.setChecked(bool(init["iracing"]["live_positions"]))
         f.addRow(tr("Idioma / Language"), self.language)
         f.addRow(tr("Simulador"), self.sim)
         f.addRow(tr("Mostrar o overlay"), self.vis)
@@ -160,6 +162,7 @@ class SettingsDialog(QDialog):
         f.addRow(tr("Meu país (bandeira)"), self.country)
         f.addRow(self.wordmark)
         f.addRow(self.invert_clutch)
+        f.addRow(self.live_positions)
         note = QLabel(tr("Trocar o simulador reconecta na hora. A leitura dos dados só muda ao reconectar."))
         note.setWordWrap(True)
         f.addRow(note)
@@ -248,7 +251,7 @@ class SettingsDialog(QDialog):
             "ui_hz": self.ui_hz.currentData(), "my_country": self.country.text().strip(),
             "logo_wordmark": self.wordmark.isChecked(),
             "update_repo": self.update_repo.text().strip(), "check_updates_on_start": self.update_auto.isChecked(),
-            "iracing": {"invert_clutch": self.invert_clutch.isChecked()},
+            "iracing": {"invert_clutch": self.invert_clutch.isChecked(), "live_positions": self.live_positions.isChecked()},
             "lmu": {"driver_rank": self.driver_rank.text().strip(), "safety_rank": self.safety_rank.text().strip(),
                     "contact_badge": self.badge.currentData()},
             "hotkeys": {a: f.text() for a, f in self.hotkeys.items()},

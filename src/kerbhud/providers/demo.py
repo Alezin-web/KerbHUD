@@ -224,6 +224,7 @@ DEMO_FEATURES: dict[str, str] = {
     "piloto_dirigindo_ou_fora_do_carro": "treino",
     "mapa_grava_mesmo_com_box_na_reta": "box",
     "mapa_por_posicao_estimada_iracing": "corrida",
+    "posicao_ao_vivo_na_corrida": "corrida",
     "atalho_pula_para_a_proxima_etapa": "treino",
     "disputas_e_voltas_a_frente_atras": "corrida",
     "pits_e_abandono": "corrida",
