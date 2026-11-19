@@ -10,7 +10,7 @@ Roda furada/solta aparece em vermelho. Sem dados do simulador, nada é inventado
 """
 from __future__ import annotations
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 
 from ..core.tireview import format_pressure, get_pressure_unit, tire_view

@@ -5,7 +5,7 @@ O conteúdo vem de `GUIDE.md` e `CHANGELOG.md` (Markdown restrito -> HTML seguro
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 from PySide6.QtWidgets import QDialog, QPushButton, QTabWidget, QTextBrowser, QVBoxLayout
 

@@ -131,12 +131,22 @@ class TestApply(unittest.TestCase):
         with self.assertRaises(U.UpdateError):
             U.safe_extract(self.root / "notzip.zip", self.root / "out3")
 
+    def test_release_json_with_null_assets_or_odd_size_does_not_crash(self):
+        info = U.check_latest("a/b", "0.1.0", frozen=False, fetch_json=lambda u: {
+            "tag_name": "v9.0.0", "assets": [{"name": "KerbHUD-source.zip", "size": "muito", "browser_download_url": "https://github.com/x"}]})
+        self.assertEqual(info.size, 0)
+        with self.assertRaises(U.UpdateError):
+            U.check_latest("a/b", "0.1.0", frozen=False, fetch_json=lambda u: {"tag_name": "v9.0.0", "assets": None})
+
     def test_swap_script_never_touches_data(self):
         bat = U.write_swap_script(self.root / "novo", self.root, "KerbHUD.exe", 1234)
         text = bat.read_bytes().decode()
         self.assertIn("\r\n", text)
         self.assertIn("/XD dados", text)
         self.assertIn("PID eq 1234", text)
+        self.assertIn('find ",""1234"","', text)  # PID exato (não confunde 123 com 1234)
+        self.assertIn("GTR 60", text)  # a espera tem limite
+        self.assertIn("if errorlevel 8", text)  # robocopy falhou: não apaga a pasta nem some com a versão antiga
 
 
 if __name__ == "__main__":

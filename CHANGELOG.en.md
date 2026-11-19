@@ -1,3 +1,11 @@
+## 0.17.6 — General review
+
+* **The overlay no longer freezes on a read error:** before, any unexpected error while reading the simulator silently stopped the capture until you restarted the program. Now the error is logged, reading continues and, if it does not go away, KerbHUD reconnects by itself.
+* **Error log:** new `kerbhud.log` file (Help → Open log file) to send me when something goes wrong.
+* **Error-proof settings:** a corrupted or invalid `settings.json` no longer stops the app from opening (the bad file is kept as `settings.json.bad`) and it is now written safely.
+* **iRacing:** odd session text no longer blocks reading. **Updater:** waits for the program to close more reliably, retries when a file is in use, deletes nothing if the copy fails and handles odd GitHub replies.
+* Unused code cleanup and more tests.
+
 ## 0.17.5 — Live position on iRacing
 
 * **Live Standings and Relative in iRacing races:** the official iRacing position only changes when a car crosses the finish line. Now, in a **race**, KerbHUD works out the order from each car's position on track (completed laps + part of the current lap), so overtakes show up right away.

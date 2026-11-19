@@ -13,13 +13,14 @@ from PySide6.QtWidgets import QApplication, QFileDialog, QInputDialog, QMenu, QM
 from .. import __version__
 from ..core.i18n import get_language, module_title, resolve_language, set_language, tr
 from ..core import brand, winapi
-from ..core.engine import Engine, load_settings, update_settings_file
+from ..core.engine import Engine, load_settings, update_settings_file, write_settings_file
 from ..core import visibility
 from ..providers.demo import SCENARIOS
 from ..core.history import TelemetryHistory
 from ..core.layout import MODULES, LayoutStore
 from ..core.logos import fetch_logos, installed_logos
-from ..core.flags import FlagResolver, fetch_flags, installed_flags
+from ..core.flags import FlagResolver, fetch_flags
+from ..core.log import get_logger, install_excepthooks, setup_logging
 from ..core.fuel import RESERVE_CHOICES, get_reserve
 from ..core.radar import RANGE_CHOICES, get_range
 from ..core.tireview import PRESSURE_UNITS, get_pressure_unit
@@ -29,7 +30,7 @@ from ..core.relative import AHEAD_CHOICES, FIGHT_CHOICES, get_relative_options
 from ..core.standings import (COLUMN_KEYS, COLUMN_LABELS, ROW_CHOICES, get_standings_options)
 from ..core.viewmodel import (CHANNEL_LABELS, CHANNELS, HISTORY_CHOICES, TRACE_CHOICES,
                               get_channels, get_history_s, get_trace_s)
-from . import icons, theme
+from . import icons
 from .context import ModuleContext
 from .main_window import MainWindow
 from .overlay_manager import OverlayManager
@@ -606,6 +607,14 @@ class Tray:
             os.startfile(str(data_dir()))  # noqa: S606
 
     @staticmethod
+    def _open_log() -> None:
+        if winapi.IS_WIN:
+            import os
+            from ..core.log import log_path
+            target = log_path()
+            os.startfile(str(target if target.exists() else target.parent))  # noqa: S606
+
+    @staticmethod
     def _open_config() -> None:
         if winapi.IS_WIN:
             import os
@@ -619,13 +628,15 @@ def run(sim: str = "auto", edit: bool = False, demo_scenario: str | None = None)
     app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("KerbHUD")
 
+    setup_logging()  # erros vão para kerbhud.log (Ajuda → Abrir arquivo de log), em vez de sumirem
+    install_excepthooks()
+    get_logger().info("KerbHUD %s iniciado", __version__)
     migrate_legacy_config()  # settings.json do nome antigo (SimOverlay), se houver
     migrate_legacy_assets()  # logos/bandeiras/ícones que estavam em %APPDATA% passam a existir na pasta raiz
     settings_path: Path = config_dir() / "settings.json"
     if not settings_path.exists():
-        import json
         from ..core.engine import DEFAULT_SETTINGS
-        settings_path.write_text(json.dumps(DEFAULT_SETTINGS, indent=2), encoding="utf-8")
+        write_settings_file(settings_path, DEFAULT_SETTINGS)
     settings = load_settings(settings_path)
     from PySide6.QtCore import QLocale
     set_language(resolve_language(settings.get("language"), QLocale.system().name()))  # antes de criar qualquer janela/menu

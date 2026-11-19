@@ -1,3 +1,11 @@
+## 0.17.6 — Revisão geral
+
+* **O overlay não congela mais por um erro de leitura:** antes, qualquer erro inesperado ao ler o simulador parava a captura em silêncio até reiniciar o programa. Agora o erro é registrado, a leitura continua e, se ele não passar, o KerbHUD reconecta sozinho.
+* **Log de erros:** novo arquivo `kerbhud.log` (Ajuda → Abrir arquivo de log) para você me mandar quando algo der errado.
+* **Configurações à prova de erro:** um `settings.json` corrompido ou com valor inválido não impede mais de abrir (o arquivo ruim é guardado como `settings.json.bad`) e ele é gravado de forma segura.
+* **iRacing:** um texto de sessão estranho não trava mais a leitura. **Atualizador:** espera o programa fechar com mais segurança, tenta de novo se um arquivo estiver em uso, não apaga nada se a cópia falhar e aguenta respostas estranhas do GitHub.
+* Limpeza de código sem uso e mais testes.
+
 ## 0.17.5 — Posição ao vivo no iRacing
 
 * **Standings e Relative em tempo real na corrida do iRacing:** a posição oficial do iRacing só muda quando o carro cruza a linha de chegada. Agora, na **corrida**, o KerbHUD calcula a ordem pela posição de cada carro na pista (voltas completas + parte da volta), então as ultrapassagens aparecem na hora.

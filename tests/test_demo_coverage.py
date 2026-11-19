@@ -42,6 +42,7 @@ CHECKS = {
     and len({at("lmu", t).profile.driver_rank for t in range(0, 35, 7)}) >= 4,
     "atalho_pula_para_a_proxima_etapa": lambda: _skip_changes_stage(),
     "piloto_dirigindo_ou_fora_do_carro": lambda: at("treino", 1).driving is False and at("corrida", 5).driving is True,
+    "motor_e_configuracao_resilientes": lambda: _resilient_engine_and_settings(),
     "posicao_ao_vivo_na_corrida": lambda: _live_order_matches_positions(),
     "mapa_por_posicao_estimada_iracing": lambda: _estimated_map_ok(),
     "mapa_grava_mesmo_com_box_na_reta": lambda: _map_with_pit_on_the_straight(),
@@ -106,6 +107,40 @@ def _map_done(stage):
     for snap in _walk(stage, 0, 35, 0.04):
         shape = rec.update(snap) or shape
     return shape is not None and len(map_cars(snap, shape)) >= 8
+
+
+def _resilient_engine_and_settings():
+    """O DEMO roda no mesmo motor: um erro numa leitura não o derruba, e um settings.json corrompido não impede de abrir."""
+    import tempfile
+    import time
+    from pathlib import Path
+    from kerbhud.core.engine import Engine, load_settings
+    from kerbhud.providers.demo import DemoProvider
+    with tempfile.TemporaryDirectory() as d:
+        bad = Path(d) / "settings.json"
+        bad.write_text("{ isto não é json", encoding="utf-8")
+        cfg = load_settings(bad)
+        if cfg["simulator"] != "auto" or not (Path(d) / "settings.json.bad").exists():
+            return False
+    cfg["simulator"] = "demo"
+    demo = DemoProvider()
+    real_poll, state = demo.poll, {"n": 0}
+
+    def flaky():
+        state["n"] += 1
+        if state["n"] in (2, 3):
+            raise RuntimeError("erro de leitura simulado")
+        return real_poll()
+
+    demo.poll = flaky
+    eng = Engine(cfg, providers={"demo": demo, "iracing": DemoProvider(), "lmu": DemoProvider()})
+    eng.start()
+    t0 = time.time()
+    while time.time() - t0 < 3 and state["n"] < 8:
+        time.sleep(0.02)
+    alive = eng._thread.is_alive()
+    eng.stop()
+    return alive and state["n"] >= 8 and eng.latest().is_demo
 
 
 def _live_order_matches_positions():

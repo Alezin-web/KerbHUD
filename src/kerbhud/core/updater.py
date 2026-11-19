@@ -110,7 +110,10 @@ def http_json(url: str) -> dict:
 
 def http_download(url: str, dest: Path, progress: Optional[Callable[[int, int], None]] = None) -> None:
     with _open(url, timeout=30.0) as r, open(dest, "wb") as f:
-        total = int(r.headers.get("Content-Length") or 0)
+        try:
+            total = int(r.headers.get("Content-Length") or 0)
+        except ValueError:
+            total = 0
         if total > MAX_DOWNLOAD:
             raise UpdateError("arquivo grande demais para ser uma atualização")
         got = 0
@@ -147,16 +150,20 @@ def check_latest(repo: str, current: str, frozen: Optional[bool] = None,
             return None
     except ValueError as exc:
         raise UpdateError(f"versão do release ilegível: {data['tag_name']!r}") from exc
-    assets = [a for a in data.get("assets", []) if isinstance(a, dict)]
+    assets = [a for a in (data.get("assets") or []) if isinstance(a, dict)]
     asset = pick_asset(assets, frozen)
     if asset is None:
         kind = "Windows (.exe)" if frozen else "código-fonte"
         raise UpdateError(f"o release {data['tag_name']} não tem o arquivo zip de {kind}")
     sha = next((a for a in assets if a.get("name") == asset["name"] + ".sha256"), None)
+    try:
+        size = int(asset.get("size") or 0)
+    except (TypeError, ValueError):
+        size = 0
     return ReleaseInfo(version=str(data["tag_name"]).lstrip("vV"), notes=str(data.get("body") or "")[:4000],
                        asset_name=str(asset["name"]), asset_url=str(asset.get("browser_download_url", "")),
                        sha256_url=str(sha.get("browser_download_url", "")) if sha else "",
-                       size=int(asset.get("size") or 0))
+                       size=size)
 
 
 def sha256_of(path: Path) -> str:
@@ -254,11 +261,20 @@ def write_swap_script(new_dir: Path, app_root: Path, exe_name: str, pid: int) ->
     """(.exe) Gera o .bat que espera o programa fechar, copia os arquivos novos (sem tocar em `dados`) e reabre."""
     bat = app_root / "_update" / "aplicar-atualizacao.bat"
     bat.parent.mkdir(parents=True, exist_ok=True)
+    exe = app_root / exe_name
+    # Espera o programa fechar (no máximo 60 s). O PID é procurado entre aspas e vírgulas no CSV do tasklist, para não
+    # confundir "123" com "1234" ou com a memória usada por outro processo (isso deixaria a espera infinita).
     lines = [
-        "@echo off", "chcp 65001 >nul",
-        ":espera", f'tasklist /FI "PID eq {pid}" 2>nul | find "{pid}" >nul', "if not errorlevel 1 (timeout /t 1 >nul & goto espera)",
-        f'robocopy "{new_dir}" "{app_root}" /E /XD dados .backup _update /NFL /NDL /NJH /NJS /NP >nul',
-        f'start "" "{app_root / exe_name}"',
+        "@echo off", "chcp 65001 >nul", "set /a n=0",
+        ":espera", "set /a n+=1", "if %n% GTR 60 goto copiar",
+        f'tasklist /FI "PID eq {pid}" /FO CSV /NH 2>nul | find ",""{pid}""," >nul',
+        "if not errorlevel 1 (timeout /t 1 >nul & goto espera)",
+        ":copiar",
+        # /R /W: tenta de novo se o antivírus ou o Windows ainda estiverem segurando um arquivo
+        f'robocopy "{new_dir}" "{app_root}" /E /R:10 /W:1 /XD dados .backup _update /NFL /NDL /NJH /NJS /NP >nul',
+        # robocopy: 0-7 = sucesso; 8 ou mais = falhou. Falhou: reabre a versão antiga e deixa um aviso em vez de apagar a pasta
+        f'if errorlevel 8 (echo A atualizacao nao conseguiu copiar os arquivos. A versao anterior continua instalada.> "{app_root / "_update" / "erro.txt"}" & start "" "{exe}" & exit /b 1)',
+        f'start "" "{exe}"',
         f'rmdir /S /Q "{app_root / "_update"}"',
     ]
     bat.write_bytes(("\r\n".join(lines) + "\r\n").encode("utf-8"))

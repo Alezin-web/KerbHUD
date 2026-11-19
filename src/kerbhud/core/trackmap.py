@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from .model import CAP_PLAYER_XY_ESTIMATED, CarState, CarStatus, Sim, Snapshot
+from .model import CAP_PLAYER_XY_ESTIMATED, CarState, CarStatus, Snapshot
 
 BINS = 400  # pontos do traçado (um a cada 0,25% da volta)
 COMPLETE_AT = 0.97  # fração da volta que precisa ter sido coberta

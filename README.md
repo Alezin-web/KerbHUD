@@ -85,7 +85,7 @@ Vindo do **SimOverlay**? Suas configurações e pastas de dados são **copiadas*
 **Por que faltam logos ou países no LMU?** O LMU não informa fabricante, país nem rank para a maioria dos carros. O KerbHUD mostra o que o jogo fornece e nunca inventa dado.<br>
 **No iRacing a posição só muda ao cruzar a linha?** Na corrida, não: o KerbHUD calcula a ordem pela posição de cada carro na pista, em tempo real (dá para voltar à posição oficial em Config → Configurações). No treino e na classificação a ordem é pela melhor volta, que só muda quando alguém completa uma volta.<br>
 **Pesa no jogo?** A taxa de atualização é ajustável em **Config → Configurações** (dados e tela separados).<br>
-**Achei um bug / tenho uma ideia.** Abra uma [issue](https://github.com/Alezin-web/KerbHUD/issues) com um print. O módulo **Status** mostra a versão que você está usando.
+**Achei um bug / tenho uma ideia.** Abra uma [issue](https://github.com/Alezin-web/KerbHUD/issues) com um print. O módulo **Status** mostra a versão que você está usando, e **Ajuda → Abrir arquivo de log (erros)** abre o `kerbhud.log` para anexar.
 
 ### ⚠️ Limitações conhecidas
 
@@ -176,7 +176,7 @@ Coming from **SimOverlay**? Your settings and data folders are **copied** automa
 **Why are some logos or countries missing in LMU?** LMU doesn't publish the manufacturer, country or rank for most cars. KerbHUD shows what the game provides and never makes data up.<br>
 **On iRacing, does the position only change when crossing the line?** Not in a race: KerbHUD works out the order from each car's position on track, in real time (you can go back to the official position in Config → Settings). In practice and qualifying the order is by best lap, which only changes when someone completes a lap.<br>
 **Does it slow the game down?** The refresh rate is adjustable in **Config → Settings** (data and screen separately).<br>
-**I found a bug / have an idea.** Open an [issue](https://github.com/Alezin-web/KerbHUD/issues) with a screenshot. The **Status** module shows the version you are using.
+**I found a bug / have an idea.** Open an [issue](https://github.com/Alezin-web/KerbHUD/issues) with a screenshot. The **Status** module shows the version you are using, and **Help → Open log file (errors)** opens `kerbhud.log` to attach.
 
 ### ⚠️ Known limits
 

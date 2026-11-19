@@ -5,7 +5,7 @@ A janela não guarda lógica: cada ação chama o gerenciador, o motor ou o `Tra
 """
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QAction, QActionGroup
@@ -291,6 +291,7 @@ class MainWindow(QMainWindow):
         helpm = bar.addMenu(tr("Ajuda"))
         helpm.addAction(tr("Verificar atualizações..."), lambda: self.updates.check() if self.updates else None)
         helpm.addAction(tr("Abrir pasta de dados"), t._open_data)
+        helpm.addAction(tr("Abrir arquivo de log (erros)"), t._open_log)
         helpm.addSeparator()
         helpm.addAction(tr("Guia de uso"), lambda: self.show_welcome("guide", load_changelog(language=get_language())[:6]))
         helpm.addAction(tr("Novidades (changelog)"), lambda: self.show_welcome("news", load_changelog(language=get_language())[:6]))

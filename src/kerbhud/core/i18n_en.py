@@ -16,6 +16,7 @@ TRANSLATIONS: dict[str, str] = {
     "Todos os dados (logos, flags, badges, layouts, tracks)": "All data (logos, flags, badges, layouts, tracks)",
     "Configuração (settings.json)": "Configuration (settings.json)", "Janela": "Window",
     "Esconder na bandeja": "Hide to tray", "Ajuda": "Help", "Verificar atualizações...": "Check for updates...",
+    "Abrir arquivo de log (erros)": "Open log file (errors)",
     "Abrir pasta de dados": "Open data folder", "Novidades (changelog)": "What's new (changelog)", "Sobre": "About",
     "Sobre o KerbHUD": "About KerbHUD", "Verificando...": "Checking...",
     "Novidades do KerbHUD": "What's new in KerbHUD",

@@ -7,6 +7,7 @@ from PySide6.QtCore import QObject, QTimer
 from PySide6.QtGui import QGuiApplication
 
 from ..core import brands, visibility, winapi
+from ..core.log import get_logger
 from ..core.paths import config_dir
 from ..core.engine import Engine
 from ..core.layout import (MODULES, Layout, LayoutStore, ScreenInfo, pick_screen, pixels_to_rect,
@@ -87,7 +88,10 @@ class OverlayManager(QObject):
 
     def switch_layout(self, name: str) -> None:
         self._flush_save()
-        self.apply_layout(self.store.load(name))
+        try:
+            self.apply_layout(self.store.load(name))
+        except (OSError, ValueError):  # arquivo do layout sumiu ou foi corrompido: fica no layout atual
+            get_logger().warning("Não foi possível abrir o layout %r", name, exc_info=True)
 
     def switch_layout_by_index(self, index: int) -> None:
         names = self.store.list_names()

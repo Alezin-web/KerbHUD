@@ -23,7 +23,7 @@ from .brands import Brand, brand_for_car
 from .flags import FlagResolver
 from .classes import class_style, license_color
 from .irating import format_ir, projected_changes
-from .model import CarState, CarStatus, Sim, Snapshot
+from .model import CarState, CarStatus, Snapshot
 from .sessioninfo import SessionBar, build_session_bar
 from .textfmt import format_gap, format_laptime, format_remaining, is_race  # noqa: F401 (reexportados)
 

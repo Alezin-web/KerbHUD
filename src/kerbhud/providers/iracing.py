@@ -30,6 +30,7 @@ from ..core.model import (
 from ..core.deadreckon import DeadReckoner
 from ..core.flags import country_code
 from ..core.liveorder import LiveOrder
+from ..core.log import get_logger
 from ..core.textfmt import is_race
 from .base import Provider, ProviderDisconnected
 from .session_yaml import as_float, as_int, parse_session_yaml
@@ -193,8 +194,12 @@ class IRacingProvider(Provider):
         if upd == self._sess_update or length <= 0:
             return
         text = self._mem.read(off, length).split(b"\0", 1)[0].decode("cp1252", errors="replace")
-        self._yaml = parse_session_yaml(text)
-        self._sess_update = upd
+        self._sess_update = upd  # marca já: se a leitura falhar, não tenta de novo 60 vezes por segundo até o próximo upd
+        try:
+            self._yaml = parse_session_yaml(text)
+        except Exception:  # noqa: BLE001 - texto estranho do jogo: mantém os dados da sessão anterior
+            get_logger().exception("Não foi possível ler o texto de sessão do iRacing (SessionInfo)")
+            return
         drivers = (self._yaml.get("DriverInfo") or {}).get("Drivers") or []
         self._drivers = {}
         for d in drivers:
