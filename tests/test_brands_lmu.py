@@ -45,8 +45,10 @@ class TestLmuRealNames(unittest.TestCase):
 
     def test_nothing_in_the_name_cites_a_maker_so_it_is_not_guessed(self):
         from kerbhud.core.brands import brand_for_car
-        self.assertIsNone(brand_for_car(None, self.DKR4, "Group22", "LMP3", "lmu"))
-        self.assertIsNone(brand_for_car(None, "Iron Lynx 2026 #79:Spa 79_26_IRON66566848", "Group13", "GT3", "lmu"))
+        self.assertEqual(brand_for_car(None, self.DKR4, "Group22", "LMP3", "lmu").key, "ginetta")  # pela tabela de equipes
+        self.assertIsNone(brand_for_car(None, "Equipe Fora da Tabela 2026 #7:WEC 7_X", "Group22", "LMP3", "lmu"))
+        self.assertEqual(brand_for_car(None, "Iron Lynx 2026 #79:Spa 79_26_IRON66566848", "Group13", "GT3", "lmu").key,
+                         "mercedes")  # pela tabela de equipes
 
     def test_lmp2_elms_is_oreca_by_class(self):
         from kerbhud.core.brands import brand_for_car

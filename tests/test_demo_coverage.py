@@ -43,6 +43,7 @@ CHECKS = {
     "atalho_pula_para_a_proxima_etapa": lambda: _skip_changes_stage(),
     "piloto_dirigindo_ou_fora_do_carro": lambda: at("treino", 1).driving is False and at("corrida", 5).driving is True,
     "motor_e_configuracao_resilientes": lambda: _resilient_engine_and_settings(),
+    "fabricante_pela_equipe_no_lmu": lambda: _lmu_team_brands(),
     "posicao_ao_vivo_na_corrida": lambda: _live_order_matches_positions(),
     "mapa_por_posicao_estimada_iracing": lambda: _estimated_map_ok(),
     "mapa_grava_mesmo_com_box_na_reta": lambda: _map_with_pit_on_the_straight(),
@@ -107,6 +108,15 @@ def _map_done(stage):
     for snap in _walk(stage, 0, 35, 0.04):
         shape = rec.update(snap) or shape
     return shape is not None and len(map_cars(snap, shape)) >= 8
+
+
+def _lmu_team_brands():
+    """No LMU a fabricante vem da tabela equipe/número (o nome do carro só cita a equipe)."""
+    from kerbhud.core.brands import brand_for_car, set_overrides
+    set_overrides([])
+    f = lambda v, c: getattr(brand_for_car(None, v, None, c, "lmu"), "key", None)
+    return (f("Proton Competition 2025 #99:WEC 99_25_X", "Hypercar") == "porsche"
+            and f("Proton Competition 2025 #11:WEC 11_25_X", "LMP2") == "oreca")
 
 
 def _resilient_engine_and_settings():

@@ -178,14 +178,32 @@ def load_overrides_file(path) -> int:
         return set_overrides([])
 
 
+_LMU_PREFIX = re.compile(r"^(.*?:\S+)")
+
+
+def lmu_team_key(vehicle_raw: Optional[str]) -> str:
+    """"EQUIPE ANO #N:SÉRIE" do texto do veículo do LMU, sem o id da pintura; "" se não bate."""
+    m = _LMU_PREFIX.match(re.sub(r"\s+", " ", vehicle_raw or "").strip().upper())
+    return m.group(1) if m else ""
+
+
+def brand_for_lmu_team(vehicle_raw: Optional[str]) -> Optional[Brand]:
+    """Fabricante pela tabela equipe/número do LMU (a pintura não cita a marca, e nomes como "AF Corse" ou
+    "Alpine Elf" também correm de Oreca). Só devolve o que a tabela afirma; fora dela, None."""
+    from .lmu_teams_data import BY_ENTRY
+    key = BY_ENTRY.get(lmu_team_key(vehicle_raw))
+    return brand_by_key(key) if key else None
+
+
 def brand_for_car(car_model, vehicle_raw, team_name=None, class_name=None, sim=None) -> Optional[Brand]:
-    """Marca do carro: regras do usuário > texto do veículo > classe de marca única do LMU. Nunca chuta."""
+    """Marca do carro: regras do usuário > tabela de equipes do LMU > classe de marca única (LMU) > texto do veículo."""
     blob = " ".join(t for t in (vehicle_raw, team_name) if t).upper()
     cls = (class_name or "").upper()
     for match, ocls, key in _OVERRIDES:
         if match in blob and (not ocls or cls.startswith(ocls)):
             return brand_by_key(key)
-    found = brand_for(car_model, vehicle_raw)
-    if found is None and str(getattr(sim, "value", sim) or "") == "lmu":
-        found = brand_for_lmu_class(class_name)
-    return found
+    is_lmu = str(getattr(sim, "value", sim) or "") == "lmu"
+    found = None
+    if is_lmu:  # classe de marca única (LMP2 = Oreca) vale antes do texto: "AF Corse"/"Alpine Elf" de LMP2 não são Ferrari/Alpine
+        found = brand_for_lmu_team(vehicle_raw) or brand_for_lmu_class(class_name)
+    return found or brand_for(car_model, vehicle_raw)

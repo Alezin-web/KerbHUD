@@ -1,3 +1,9 @@
+## 0.17.7 — Manufacturer from the team in Le Mans Ultimate
+
+* **Manufacturer logo in LMU:** the car name in LMU only mentions the team ("Proton Competition 2025 #99"). KerbHUD now has its own team/number → manufacturer table (cross-checked with TinyPedal's list), so Hypercars and GTs show the right brand, including teams that run different cars per class.
+* Fixed: teams whose name contains a brand (e.g. "AF Corse", "Alpine Elf") in LMP2 cars were shown as Ferrari/Alpine; LMP2 is always Oreca.
+* A team not in the table still gets no logo (nothing is invented); adjust it in `brand_overrides.json` — your rules always win.
+
 ## 0.17.6 — General review
 
 * **The overlay no longer freezes on a read error:** before, any unexpected error while reading the simulator silently stopped the capture until you restarted the program. Now the error is logged, reading continues and, if it does not go away, KerbHUD reconnects by itself.
