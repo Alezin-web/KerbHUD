@@ -229,6 +229,7 @@ DEMO_FEATURES: dict[str, str] = {
     "motor_e_configuracao_resilientes": "corrida",
     "fabricante_pela_equipe_no_lmu": "lmu",
     "tempo_da_sessao_com_segundos": "corrida",
+    "pneus_com_temperatura_em_destaque": "corrida",
     "escala_pelo_quadrado_vermelho": "corrida",
     "standings_linhas_topo_e_em_volta": "corrida",
     "standings_multiclasse_e_fonte": "corrida",

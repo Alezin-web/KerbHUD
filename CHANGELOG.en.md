@@ -1,3 +1,9 @@
+## 0.17.12 — Tires: temperature first
+
+* **Tires:** temperature is now the highlight of each tire (big number in the temperature colour + the three zones); wear is smaller, below (before, the big wear number with a bar looked like "load").
+* **iRacing:** temperature now comes first from the carcass (which updates while driving); the surface one is only used if the carcass one does not exist. *Still to be confirmed in the game.*
+* **Diagnostics (LMU):** now shows the raw tire values (zone temperatures, carcass, inner layer, load, pressure and ideal temperature) to check exactly what the game sends.
+
 ## 0.17.11 — Optional Standings in practice/qualy and top bar fix
 
 * **Standings in Practice and Qualy:** new option "Practice/Qualy: hide until someone sets a lap time" (Standings Config; on by default, as before). When off, Standings shows from the start with **all drivers** (those without a time come after, with "—"), with no waiting message.

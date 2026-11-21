@@ -212,6 +212,9 @@ class TestUiWithStub(unittest.TestCase):
         t = self._texts(p)
         self.assertIn("VOLTA", t)  # a volta atual no centro do carro
         self.assertTrue(any(x.endswith("°") for x in t))
+        self.assertTrue(any(x.endswith("°C") for x in t))  # temperatura média em destaque, em cada pneu
+        self.assertIn("TEMP.", t)
+        self.assertIn("DESG.", t)  # o desgaste continua, mas secundário
         p = MagicMock(); flag.paint_content(p, 280, 140)
         self.assertGreater(p.drawEllipse.call_count, 120)  # painel de LEDs: moldura + grade + sigla
         flag.update_snapshot(at(10))  # sem bandeira: some com fade (não de seco)

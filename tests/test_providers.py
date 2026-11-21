@@ -248,7 +248,7 @@ IR_VARS = [  # nome, tipo irsdk, count
     ("PlayerCarTowTime", 4, 1), ("Lat", 5, 1), ("Lon", 5, 1),
     ("SessionFlags", 3, 1), ("CarLeftRight", 2, 1),
     *[(f"{w}{k}", 4, 1) for w in ("LF", "RF", "LR", "RR") for k in
-      ("tempL", "tempM", "tempR", "wearL", "wearM", "wearR", "pressure")],
+      ("tempL", "tempM", "tempR", "tempCL", "tempCM", "tempCR", "wearL", "wearM", "wearR", "pressure")],
     ("PlayerCarMyIncidentCount", 2, 1), ("CarIdxTireCompound", 2, 64),
     ("Speed", 4, 1), ("RPM", 4, 1), ("Gear", 2, 1), ("SessionTime", 5, 1), ("YawNorth", 4, 1),
     ("ThrottleRaw", 4, 1), ("BrakeRaw", 4, 1), ("ClutchRaw", 4, 1),
@@ -436,6 +436,9 @@ class TestStage6Data(unittest.TestCase):
         self.assertEqual((fl.pressure_kpa, round(fl.wear_pct)), (180.0, 90))
         self.assertAlmostEqual(fl.optimal_c, 85.0, places=2)
         self.assertTrue(rr.flat)
+        raw = s.debug["pneus_brutos"]  # o diagnóstico mostra os valores crus dos pneus
+        self.assertIn("fl: mTemperature=[350.0, 352.0, 354.0]", raw)
+        self.assertIn("pressao=180.0", raw)
         self.assertEqual(s.tires.compound, "Medium")
         self.assertEqual(set(s.session.flags), {"blue", "green"})  # 11 constante = valor de repouso: não é amarela
         self.assertEqual(s.pose.forward, (1.0, 0.0))
@@ -480,6 +483,15 @@ class TestStage6Data(unittest.TestCase):
         self.assertAlmostEqual(lf.temp_c, 83.0)
         self.assertEqual((lf.pressure_kpa, round(lf.wear_pct)), (190.0, 80))
         self.assertTrue({CAP_FLAGS, CAP_SIDE_TRAFFIC, CAP_TIRE_DETAIL} <= s.capabilities)
+
+    def test_iracing_prefers_live_carcass_temperature_over_surface(self):
+        vals = ir_values()
+        vals.update({f"{w}tempC{z}": c for w in ("LF", "RF", "LR", "RR") for z, c in (("L", 60.0), ("M", 62.0), ("R", 64.0))})
+        p = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=vals)))
+        p.connect()
+        lf = p.poll().tires.wheels["fl"]
+        self.assertAlmostEqual(lf.temp_c, 62.0)  # carcaça (60/62/64), não a superfície (80/83/86)
+        self.assertEqual(lf.temps_c, (60.0, 62.0, 64.0))
 
     def test_iracing_side_traffic_table_and_missing_vars(self):
         for raw, expected in ((0, None), (1, (0, 0)), (2, (1, 0)), (3, (0, 1)), (5, (2, 0)), (6, (0, 2))):

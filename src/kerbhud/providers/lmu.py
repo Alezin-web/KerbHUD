@@ -90,6 +90,18 @@ def tire_set(telem) -> Optional[TireSet]:
     return TireSet(wheels=wheels, compound=_txt(telem.mFrontTireCompoundName) or None)
 
 
+def tire_raw_debug(telem) -> str:
+    """Valores CRUS dos pneus como o jogo envia (para o diagnóstico): temperatura (3 zonas), carcaça, camada interna,
+    carga, pressão e temperatura ideal. Serve para conferir a unidade (Kelvin ou °C) e qual campo é qual."""
+    out = []
+    for corner, w in zip(TIRE_CORNERS, telem.mWheels):
+        r = lambda v: round(float(v), 1)  # noqa: E731
+        out.append(f"{corner}: mTemperature={[r(t) for t in w.mTemperature]} carcaca={r(w.mTireCarcassTemperature)} "
+                   f"interna={[r(t) for t in w.mTireInnerLayerTemperature]} carga={r(w.mTireLoad)} "
+                   f"pressao={r(w.mPressure)} ideal={r(w.mOptimalTemp)} desgaste={round(float(w.mWear), 3)}")
+    return " | ".join(out)
+
+
 def player_pose(ori) -> Optional[PlayerPose]:
     """Eixos do carro no mundo (plano x/z) a partir de `mOri`.
 
@@ -403,6 +415,8 @@ class LmuProvider(Provider):
         debug = {"mCurrentET": float(info.mCurrentET), "mStartET": float(info.mStartET),
                  "mEndET": float(info.mEndET), "mSessionTimeRemaining": float(info.mSessionTimeRemaining),
                  "mMaxLaps": int(info.mMaxLaps), **self._extra_debug}
+        if telem is not None:
+            debug["pneus_brutos"] = tire_raw_debug(telem)  # conferir a temperatura dos pneus (unidade e campos)
         if active:
             debug["lmu_bandeiras_brutas"] = raw_flags  # confira com o que aparece na tela do jogo
         if pose_debug is not None:

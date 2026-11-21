@@ -482,9 +482,11 @@ class IRacingProvider(Provider):
         wheels: dict[str, TireWheel] = {}
         for corner in TIRE_CORNERS:
             pre = prefix[corner]
-            temps = [g(f"{pre}temp{s}") for s in ("L", "M", "R")]
-            if any(t is None for t in temps):
-                temps = [g(f"{pre}tempC{s}") for s in ("L", "M", "R")]
+            # temperatura da carcaça (tempC*): atualiza ao vivo com o carro na pista. A de superfície (temp*) pode
+            # ficar parada no valor do último pit (VERIFICAR no jogo), por isso só entra se a da carcaça não existir.
+            temps = [g(f"{pre}tempC{s}") for s in ("L", "M", "R")]
+            if any(t is None for t in temps) or not any(t > 0.0 for t in temps):  # ausente ou zerada: não é leitura
+                temps = [g(f"{pre}temp{s}") for s in ("L", "M", "R")]
             wear = [g(f"{pre}wear{s}") for s in ("L", "M", "R")]
             press = g(f"{pre}pressure")
             temp = sum(temps) / 3 if all(t is not None for t in temps) else None

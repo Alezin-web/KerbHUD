@@ -49,6 +49,8 @@ CHECKS = {
     "motor_e_configuracao_resilientes": lambda: _resilient_engine_and_settings(),
     "fabricante_pela_equipe_no_lmu": lambda: _lmu_team_brands(),
     "tempo_da_sessao_com_segundos": lambda: _session_time_has_seconds(),
+    "pneus_com_temperatura_em_destaque": lambda: all(c.temp_c is not None and all(t is not None for t in c.temps)
+                                                       for c in tire_view(at("corrida", 12)).cells.values()),
     "escala_pelo_quadrado_vermelho": lambda: _corner_drag_scales_and_wheel_does_not(),
     "standings_linhas_topo_e_em_volta": lambda: _standings_top_and_around(),
     "standings_multiclasse_e_fonte": lambda: _standings_multiclass_and_font(),

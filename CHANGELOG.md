@@ -1,3 +1,9 @@
+## 0.17.12 — Pneus: temperatura em destaque
+
+* **Pneus:** a temperatura agora é o destaque de cada pneu (número grande na cor da temperatura + as três zonas); o desgaste ficou menor, embaixo (antes o número grande de desgaste com barra parecia "carga").
+* **iRacing:** a temperatura passa a vir primeiro da carcaça (que atualiza com o carro na pista); a de superfície só entra se a da carcaça não existir. *Ainda a confirmar no jogo.*
+* **Diagnóstico (LMU):** agora mostra os valores crus dos pneus (temperatura das zonas, carcaça, camada interna, carga, pressão e temperatura ideal) para conferir exatamente o que o jogo envia.
+
 ## 0.17.11 — Standings em treino/qualy opcional e ajuste da barra do topo
 
 * **Standings em Practice e Qualy:** nova opção "Treino/Qualy: esconder até alguém fazer um tempo" (Config do Standings; ligada por padrão, como era). Desligada, o Standings aparece desde o começo com **todos os pilotos** (quem ainda não fez tempo vem depois, com "—"), sem mensagem de espera.
