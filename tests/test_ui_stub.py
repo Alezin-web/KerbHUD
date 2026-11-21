@@ -103,7 +103,7 @@ def _install_stub():
 
     gui = types.ModuleType("PySide6.QtGui")
     gui.QPainter = QPainter
-    for n in ("QColor", "QFont", "QPen", "QPainterPath", "QBrush", "QLinearGradient", "QRadialGradient", "QGuiApplication", "QAction", "QActionGroup", "QIcon", "QPixmap", "QKeySequence"):
+    for n in ("QColor", "QFont", "QPen", "QPainterPath", "QBrush", "QLinearGradient", "QRadialGradient", "QGuiApplication", "QAction", "QActionGroup", "QIcon", "QPixmap", "QKeySequence", "QFontDatabase"):
         setattr(gui, n, MagicMock())
     wid = types.ModuleType("PySide6.QtWidgets")
     wid.QWidget = QWidget
@@ -111,7 +111,7 @@ def _install_stub():
     def _mw(self): return MagicMock()
     wid.QMainWindow = type('QMainWindow', (QWidget,), {'menuBar': _mw, 'statusBar': _mw, 'setCentralWidget': lambda self, w: None,
                                                        'setWindowTitle': lambda self, t: None, 'hide': lambda self: setattr(self, '_vis', False)})
-    for n in ("QApplication", "QInputDialog", "QMenu", "QMessageBox", "QSystemTrayIcon", "QFileDialog", "QCheckBox", "QComboBox", "QDialogButtonBox", "QFormLayout", "QHBoxLayout", "QKeySequenceEdit", "QLabel", "QLineEdit", "QListWidget", "QPushButton", "QTabWidget", "QToolButton", "QVBoxLayout", "QScrollArea", "QSystemTrayIcon", "QTextBrowser"):
+    for n in ("QApplication", "QInputDialog", "QMenu", "QMessageBox", "QSystemTrayIcon", "QFileDialog", "QCheckBox", "QComboBox", "QDialogButtonBox", "QFormLayout", "QHBoxLayout", "QKeySequenceEdit", "QLabel", "QLineEdit", "QListWidget", "QPushButton", "QSpinBox", "QTabWidget", "QToolButton", "QVBoxLayout", "QScrollArea", "QSystemTrayIcon", "QTextBrowser"):
         setattr(wid, n, MagicMock())
     wid.QComboBox = lambda *a, **k: MagicMock(findData=MagicMock(return_value=0))  # findData precisa devolver int
     pkg = types.ModuleType("PySide6")
@@ -309,21 +309,25 @@ class TestUiWithStub(unittest.TestCase):
         self.assertEqual(win._geom(), (128, 112, 300, 120))
         win.mouseReleaseEvent(_Ev())
         self.assertEqual(win.geometry_committed.emitted, [("inputs",)])
-        # redimensionar pelo canto inferior direito, com Alt (sem snap)
+        # Inputs tem escala fixa: arrastar a borda muda a ESCALA (proporção mantida), não a área visível
         g = win.geometry()
-        win.mousePressEvent(_Ev(g.width() - 2, g.height() - 2, 500, 500))
+        win.mousePressEvent(_Ev(g.width() - 2, 60, 500, 500))
         win.mouseMoveEvent(_Ev(0, 0, 530, 520, mods=0x08000000))
         x, y, w, h = win._geom()
-        self.assertEqual((w, h), (330, 140))
+        self.assertEqual((w, h), (330, 132))  # +10% de largura = +10% de altura
 
     def test_wheel_scale_and_opacity(self):
         win = self.modules.create_module("trackmap")
         win.setGeometry(0, 0, 400, 300)
         win.set_edit_mode(True)
         win.wheelEvent(_Ev(delta=120))
-        self.assertEqual(win._geom(), (0, 0, 420, 315))
+        self.assertEqual(win._geom(), (0, 0, 400, 300))  # a roda sozinha NÃO muda mais a escala
         win.wheelEvent(_Ev(delta=-120, mods=0x04000000))
-        self.assertAlmostEqual(win.opacity, 0.95)
+        self.assertAlmostEqual(win.opacity, 0.95)  # Ctrl + roda continua sendo a transparência
+        # módulo sem escala fixa: arrastar o canto escala a janela inteira (proporção livre, como sempre)
+        win.mousePressEvent(_Ev(395, 295, 500, 400))
+        win.mouseMoveEvent(_Ev(395, 295, 600, 400, mods=0x08000000))
+        self.assertEqual(win._geom()[2:], (500, 300))
 
     def test_manager_end_to_end(self):
         om = self.om
@@ -751,16 +755,16 @@ class TestUiWithStub(unittest.TestCase):
             p = MagicMock(); win.paint_content(p, *win.design_size())
             return self._texts(p)
 
-        small = drawn({"rows": 10})
-        big = drawn({"rows": 26})
+        small = drawn({"top_rows": 1, "around_rows": 3})
+        big = drawn({"top_rows": 10, "around_rows": 20, "other_top": 5, "other_around": 5})
         n_small, n_big = sum(n in small for n in names), sum(n in big for n in names)
         self.assertLess(n_small, n_big)
-        self.assertEqual(n_big, len(names))  # com linhas de sobra todos aparecem
+        self.assertEqual(n_big, len(names))  # com contagens grandes todos aparecem
         no_cols = drawn({"columns": {"tire": False, "nrg": False, "license": False}})
         for gone in ("Tire", "NRG"):
             self.assertNotIn(gone, no_cols)
         me = self.snap.player()
-        only = drawn({"scope": "class", "rows": 26})
+        only = drawn({"scope": "class", "top_rows": 10, "around_rows": 20})
         for c in self.snap.cars:
             self.assertEqual(c.driver_name in only, c.class_name == me.class_name, c.driver_name)
         self.assertFalse(any(x.endswith(("HYPER", "LMP2")) and x[0].isdigit() for x in only))  # sem cabeçalhos
@@ -1383,7 +1387,7 @@ class TestUiWithStub(unittest.TestCase):
         me = self.snap.player()
         win = self.modules.create_module("standings")
         win.snapshot = self.snap
-        win.options = {"scale": 0.0005, "rows": 0}  # rows=0: o tamanho da janela decide quantas linhas
+        win.options = {"scale": 0.0005, "top_rows": 10, "around_rows": 20}  # o tamanho da janela é o teto das linhas
         full_w, full_h = win.design_size()
         results = {}
         for label, (aw, ah) in {"cheia": (full_w, 900), "estreita": (700, 900), "baixa": (full_w, 260)}.items():
@@ -1459,9 +1463,22 @@ class TestUiWithStub(unittest.TestCase):
         win.options = {"scale": 0.0005}
         win.setGeometry(0, 0, 600, 120)
         win.set_edit_mode(True)
+        before = dict(win.options)
         win.wheelEvent(_Ev(delta=120))
-        self.assertAlmostEqual(win.options["scale"], 0.000525)  # +5% no texto
+        self.assertEqual(win.options, before)  # a roda sozinha não muda o texto
+        # canto inferior direito do quadrado vermelho: +20% de largura = texto e janela +20%, proporção mantida
+        win.mousePressEvent(_Ev(595, 115, 600, 120))
+        win.mouseMoveEvent(_Ev(595, 115, 720, 120, mods=0x08000000))
+        win.mouseReleaseEvent(_Ev())
+        self.assertAlmostEqual(win.options["scale"], 0.0006, places=8)
+        self.assertEqual(win._geom(), (0, 0, 720, 144))
         self.assertEqual(win.geometry_committed.emitted[-1], ("inputs",))
+        # canto superior esquerdo: o canto oposto (inferior direito) fica parado
+        win.mousePressEvent(_Ev(2, 2, 0, 0))
+        win.mouseMoveEvent(_Ev(2, 2, 144, 0, mods=0x08000000))  # puxa 144 px para dentro = menor
+        x, y, w, h = win._geom()
+        self.assertEqual((x + w, y + h), (720, 144))
+        self.assertLess(w, 720)
         before = dict(win.options)
         win.wheelEvent(_Ev(delta=120, mods=0x04000000))  # Ctrl: transparência, não o texto
         self.assertEqual(win.options, before)
@@ -1469,10 +1486,10 @@ class TestUiWithStub(unittest.TestCase):
         rel.setGeometry(0, 0, 400, 200)
         rel.set_edit_mode(True)
         rel.wheelEvent(_Ev(delta=120))
-        self.assertEqual(rel._geom()[2:], (420, 210))  # nos demais, a janela inteira escala
+        self.assertEqual(rel._geom()[2:], (400, 200))
         self.assertNotIn("scale", rel.options)
 
-    def test_dragging_an_edge_resizes_window_without_touching_the_text_scale(self):
+    def test_dragging_an_edge_scales_text_and_window_together(self):
         win = self.modules.create_module("standings")
         win.options = {"scale": 0.0005}
         win.setGeometry(100, 100, 900, 500)
@@ -1480,8 +1497,11 @@ class TestUiWithStub(unittest.TestCase):
         win.mousePressEvent(_Ev(895, 250, 995, 350))  # borda direita
         win.mouseMoveEvent(_Ev(895, 250, 695, 350, mods=0x08000000))  # arrasta 300 px para a esquerda, sem snap
         win.mouseReleaseEvent(_Ev())
-        self.assertEqual(win._geom()[2], 600)  # janela mais estreita...
-        self.assertEqual(win.options["scale"], 0.0005)  # ...e o tamanho do texto intacto
+        self.assertEqual(win._geom()[2:], (600, 333))  # janela menor na mesma proporção...
+        self.assertAlmostEqual(win.options["scale"], 0.0005 * 600 / 900, places=8)  # ...e o texto encolhe junto
+        win.mousePressEvent(_Ev(300, 328, 0, 0))  # borda de baixo: segue a altura
+        win.mouseMoveEvent(_Ev(300, 328, 0, 100, mods=0x08000000))
+        self.assertEqual(win._geom()[2:], (780, 433))
 
     def test_inputs_graph_absorbs_width_other_elements_keep_size(self):
         from kerbhud.ui import inputs_module as im
@@ -1792,7 +1812,7 @@ class TestUiWithStub(unittest.TestCase):
         for n in (3, 12, 40):
             cars = [T4.car(i, i, "GT3", driver_name=f"Piloto {i}") for i in range(1, n + 1)]
             win = self.modules.create_module("standings")
-            win.options = {"scale": 0.0005, "rows": 0}
+            win.options = {"scale": 0.0005, "top_rows": 10, "around_rows": 20}
             win.snapshot = T4.snap(cars, me=2)
             sizes[n] = win.layout_size(1200, 2000)[1]
         self.assertEqual(sizes[3], TOP_H + (1 + 3) * ROW_H + FOOTER_H + PAD_BOTTOM)  # cabeçalho + 3 pilotos

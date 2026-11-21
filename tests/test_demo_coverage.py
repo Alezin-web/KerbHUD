@@ -6,6 +6,7 @@ import unittest
 from kerbhud.core.classes import class_style
 from kerbhud.core.digflag import FLAG_CODE, DigFlagTracker, led_pattern
 from kerbhud.core.model import CarStatus
+from kerbhud.core.module_options import specs_for
 from kerbhud.core.radar import radar_view
 from kerbhud.core.spotter import side_traffic
 from kerbhud.core.tireview import tire_view
@@ -45,6 +46,9 @@ CHECKS = {
     "motor_e_configuracao_resilientes": lambda: _resilient_engine_and_settings(),
     "fabricante_pela_equipe_no_lmu": lambda: _lmu_team_brands(),
     "tempo_da_sessao_com_segundos": lambda: _session_time_has_seconds(),
+    "escala_pelo_quadrado_vermelho": lambda: _corner_drag_scales_and_wheel_does_not(),
+    "standings_linhas_topo_e_em_volta": lambda: _standings_top_and_around(),
+    "standings_multiclasse_e_fonte": lambda: _standings_multiclass_and_font(),
     "posicao_ao_vivo_na_corrida": lambda: _live_order_matches_positions(),
     "mapa_por_posicao_estimada_iracing": lambda: _estimated_map_ok(),
     "mapa_grava_mesmo_com_box_na_reta": lambda: _map_with_pit_on_the_straight(),
@@ -109,6 +113,37 @@ def _map_done(stage):
     for snap in _walk(stage, 0, 35, 0.04):
         shape = rec.update(snap) or shape
     return shape is not None and len(map_cars(snap, shape)) >= 8
+
+
+def _corner_drag_scales_and_wheel_does_not():
+    """A escala muda arrastando o quadrado vermelho (modo de edição); a roda não faz mais isso."""
+    from pathlib import Path
+    import kerbhud
+    src = (Path(kerbhud.__file__).parent / "ui" / "module_base.py").read_text(encoding="utf-8")
+    return "_scale_by_drag" in src and "self.zoom(1.0 + 0.05 * steps)" not in src
+
+
+def _standings_lines(options):
+    from kerbhud.core.standings import StandingsRow, build_standings, get_standings_options, select_lines_by_counts
+    opts = get_standings_options(options)
+    view = build_standings(at("corrida", 12), opts)
+    return [ln for ln in select_lines_by_counts(view.groups, 40, opts) if isinstance(ln, StandingsRow)]
+
+
+def _standings_top_and_around():
+    """Minha classe mostra o topo + a janela em volta de mim, e o que o usuário escolher vale."""
+    me = at("corrida", 12).player()
+    own = lambda opts: [r for r in _standings_lines(opts) if r.class_label and r.car.class_name == me.class_name]  # noqa: E731
+    return any(r.is_player for r in own({})) and len(own({"top_rows": 1, "around_rows": 3})) < len(own({"top_rows": 5, "around_rows": 9}))
+
+
+def _standings_multiclass_and_font():
+    """"Outras classes" 0 e 0 esconde as outras categorias; a fonte escolhida é guardada."""
+    from kerbhud.core.standings import get_standings_options
+    me = at("corrida", 12).player()
+    both = {r.car.class_name for r in _standings_lines({})}
+    mine = {r.car.class_name for r in _standings_lines({"other_top": 0, "other_around": 0})}
+    return len(both) > 1 and mine == {me.class_name} and get_standings_options({"font": "Roboto"}).font == "Roboto"
 
 
 def _session_time_has_seconds():

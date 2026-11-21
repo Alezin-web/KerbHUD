@@ -1,3 +1,11 @@
+## 0.17.9 — Escala pelo quadrado vermelho e novas opções do Standings
+
+* **Escala sem scroll:** a roda do mouse não muda mais o tamanho. No modo de edição, **arraste o quadrado vermelho** (borda ou canto) no Standings e no Inputs: o texto e a janela mudam juntos, mantendo a proporção, e o lado oposto fica parado. Arrastar não tira mais linhas nem colunas; para isso use as opções de Linhas. Ctrl + roda continua sendo a transparência.
+* **Standings — Linhas:** "Linhas do topo" (padrão 3) e "Linhas em volta de mim" (padrão 7): **você digita o número que quiser** (até 40). Mostra o topo da sua classe, um corte e a janela comigo no meio. Substitui o antigo teto de linhas.
+* **Standings — Outras classes:** "carros do topo" e "carros perto de mim" (padrão 1 e 1), também digitados. **0 e 0 esconde as outras categorias** (e os cabeçalhos delas).
+* **Standings — Fonte:** escolha qualquer fonte instalada no Windows ("Padrão" é a atual).
+* O preset Broadcast ganhou contagens próprias. A altura da janela continua sendo o limite de linhas.
+
 ## 0.17.8 — Segundos no tempo da sessão
 
 * **Tempo da sessão com segundos:** a barra do topo do Standings e do Relative agora mostra o total também com segundos (`00:20:07 / 00:45:00`, antes `00:45m`).

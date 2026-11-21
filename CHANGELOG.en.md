@@ -1,3 +1,11 @@
+## 0.17.9 — Scale by the red square and new Standings options
+
+* **Scale without scrolling:** the mouse wheel no longer resizes anything. In edit mode, **drag the red square** (edge or corner) on Standings and Inputs: text and window change together, keeping the proportion, and the opposite side stays put. Dragging no longer removes rows or columns; use the Rows options for that. Ctrl + wheel is still transparency.
+* **Standings — Rows:** "Top rows" (default 3) and "Rows around me" (default 7): **type any number you want** (up to 40). Shows the top of your class, a gap, then a window with you in the middle. Replaces the old row limit.
+* **Standings — Other classes:** "top cars" and "cars near me" (default 1 and 1), also typed. **0 and 0 hides the other categories** (and their headers).
+* **Standings — Font:** pick any font installed on Windows ("Default" is the current one).
+* The Broadcast preset got its own counts. The window height is still the row limit.
+
 ## 0.17.8 — Seconds in the session time
 
 * **Session time with seconds:** the top bar of Standings and Relative now shows the total with seconds too (`00:20:07 / 00:45:00`, previously `00:45m`).

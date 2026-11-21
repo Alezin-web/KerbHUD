@@ -57,7 +57,7 @@ class TestI18n(unittest.TestCase):
         for specs in SPECS.values():
             for o in specs:
                 need.add(o.label)
-                need.update(l for _v, l in o.choices)
+                need.update(l for _v, l in (o.choices if o.kind in ("choice", "multi") else ()))
         same_in_both = {"KerbHUD", "OK", "Layout", "Layout 1", "Layout 2", "Layout 3", "Layout 4", "RPM", "iRacing",
                         "Config", "Overlay", "Standings", "Relative", "Inputs", "Radar", "Track Map", "Widgets", "Layouts",
                         "Le Mans Ultimate", "Idioma / Language", "Config: {}", "Combustível", "PSI", "kPa"}

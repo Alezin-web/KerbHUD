@@ -359,7 +359,7 @@ def preset_broadcast() -> Layout:
     r = dict(_R_CORRIDA)
     r.update({"standings": (0.010, 0.06, 0.530, 0.7256), "trackmap": (0.780, 0.06, 0.21, 0.34)})
     return _layout("Broadcast", {"standings": True, "trackmap": True, "digflag": True, "status": True}, r,
-                   options={"standings": {"rows": 26}})
+                   options={"standings": {"top_rows": 5, "around_rows": 9, "other_top": 2, "other_around": 2}})
 
 
 PRESETS = (preset_corrida, preset_treino, preset_telemetria, preset_broadcast)

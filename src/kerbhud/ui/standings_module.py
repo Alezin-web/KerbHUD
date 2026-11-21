@@ -2,7 +2,7 @@
 
 **Texto de tamanho fixo:** redimensionar a janela NÃO encolhe nem aumenta o texto. Janela mais baixa = menos
 linhas; mais estreita = menos colunas (somem primeiro as menos importantes: NRG, voltas, pneu...); maior =
-mais linhas e colunas, até o que você ativou. O tamanho do texto muda pela roda do mouse (modo de edição) ou
+mais linhas e colunas, até o que você ativou. O tamanho do texto muda arrastando o quadrado vermelho (modo de edição) ou
 pelo menu da bandeja (Tamanho do texto).
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ from ..core.standings import (FOOTER_H, INFO_BADGE_R, INFO_FONT_PX, INFO_HELMET_
                               ROW_H, TITLE_FONT_PX, TITLE_ROW_H, TITLE_ROW_Y, TOP_H,
                               ColumnSpec,
                               HeaderLine, StandingsOptions, StandingsRow, StandingsView, build_standings,
-                              columns_width, fit_columns, fit_rows, get_standings_options, select_lines, NrgTracker)
+                              columns_width, fit_columns, fit_rows, get_standings_options, select_lines_by_counts, NrgTracker)
 from ..core.i18n import tr
 from . import icons, theme
 from .module_base import ModuleWindow, fit_font, make_font
@@ -56,6 +56,7 @@ class StandingsModule(ModuleWindow):
     CORNER = 8.0
     ANCHOR_TOPLEFT = True
     FIXED_SCALE = True
+    USES_FONT_OPTION = True
 
     def __init__(self, spec, ctx=None):
         super().__init__(spec, ctx)
@@ -93,7 +94,7 @@ class StandingsModule(ModuleWindow):
             else:
                 if not self._nrg.visible(snap):  # nenhuma categoria da sessão tem NRG: a coluna some
                     cols = fit_columns(replace(opts, columns=opts.columns - {"nrg"}), aw)
-                lines = select_lines(view.groups, fit_rows(opts, ah))  # linhas que cabem na altura
+                lines = select_lines_by_counts(view.groups, fit_rows(opts, ah), opts)  # linhas que cabem na altura
                 used_h = TOP_H + len(lines) * ROW_H + (FOOTER_H if opts.show_profile else 0.0) + PAD_BOTTOM
                 prep = _Prep(opts, cols, view, lines, columns_width(cols), used_h)
         self._prep, self._prep_snap, self._prep_key = prep, snap, key

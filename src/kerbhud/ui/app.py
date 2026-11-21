@@ -27,7 +27,7 @@ from ..core.tireview import PRESSURE_UNITS, get_pressure_unit
 from ..core.settings_schema import apply_patch
 from ..core.paths import data_dir, migrate_legacy_assets, migrate_legacy_config, badges_dir, config_dir, flags_dir, layouts_dir, logos_dir, tracks_dir
 from ..core.relative import AHEAD_CHOICES, FIGHT_CHOICES, get_relative_options
-from ..core.standings import (COLUMN_KEYS, COLUMN_LABELS, ROW_CHOICES, get_standings_options)
+from ..core.standings import (COLUMN_KEYS, COLUMN_LABELS, get_standings_options)
 from ..core.viewmodel import (CHANNEL_LABELS, CHANNELS, HISTORY_CHOICES, TRACE_CHOICES,
                               get_channels, get_history_s, get_trace_s)
 from . import icons
@@ -220,15 +220,6 @@ class Tray:
         st_menu.addSeparator()
         st_menu.addAction(tr("Aumentar o texto (+10%)"), lambda: m.zoom_module("standings", 1.10))
         st_menu.addAction(tr("Diminuir o texto (-10%)"), lambda: m.zoom_module("standings", 1 / 1.10))
-        st_menu.addSeparator()
-        rows_group = QActionGroup(st_menu)
-        for n in ROW_CHOICES:
-            a = _act("Automático (preenche a janela)" if n == 0 else tr("{} linhas no máximo").format(n), st_menu,
-                        checkable=True)
-            a.setChecked(so.rows == n)
-            a.triggered.connect(lambda _c=False, v=n: m.set_option("standings", "rows", v))
-            rows_group.addAction(a)
-            st_menu.addAction(a)
         st_menu.addSeparator()
         a = QAction(tr("Animações de ultrapassagem"), st_menu, checkable=True)
         a.setChecked(so.animations)

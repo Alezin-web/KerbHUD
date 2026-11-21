@@ -35,9 +35,10 @@ COLUMN_LABELS = {"flag": "Bandeira (país)", "license": "Licença / iRating", "b
                  "tire": "Pneu", "laps": "Voltas completadas", "int": "Int (para o da frente)", "gap": "Gap (para o líder)",
                  "best": "Melhor volta", "last": "Última volta", "nrg": "Energia (NRG)"}
 DEFAULT_COLUMNS = frozenset(COLUMN_KEYS)
-ROW_CHOICES = (0, 10, 14, 18, 22, 26)  # 0 = automático (preenche a altura da janela); conta os cabeçalhos
-DEFAULT_ROWS = 18
 SCOPES = ("all", "class")
+DEFAULT_TOP_ROWS, DEFAULT_AROUND_ROWS, DEFAULT_OTHER_TOP, DEFAULT_OTHER_AROUND = 3, 7, 1, 1
+MAX_COUNT = 40  # a pessoa digita o número que quiser, até aqui (a altura da janela ainda é o teto)
+TOP_ROW_RANGE, AROUND_ROW_RANGE, OTHER_RANGE = (0, MAX_COUNT), (1, MAX_COUNT), (0, MAX_COUNT)
 
 # ---- geometria (unidades de projeto) ------------------------------------ #
 TOP_H, ROW_H, FOOTER_H, PAD_BOTTOM, PAD = 44.0, 30.0, 34.0, 6.0, 8.0
@@ -71,25 +72,36 @@ MAX_AUTO_ROWS = 40
 @dataclass(frozen=True)
 class StandingsOptions:
     scope: str = "all"
-    rows: int = DEFAULT_ROWS
     columns: frozenset = DEFAULT_COLUMNS
     show_profile: bool = True
     animations: bool = True  # linhas deslizam e piscam em ultrapassagens
+    top_rows: int = DEFAULT_TOP_ROWS  # minha classe: carros do topo
+    around_rows: int = DEFAULT_AROUND_ROWS  # minha classe: carros em volta de mim (comigo no meio)
+    other_top: int = DEFAULT_OTHER_TOP  # OUTRAS classes: carros do topo de cada uma (0 e 0 = nenhuma outra classe)
+    other_around: int = DEFAULT_OTHER_AROUND  # OUTRAS classes: carros mais perto de mim na classificação geral
+    font: str = ""  # "" = fonte padrão do KerbHUD; senão o nome de uma fonte instalada
 
 
 def get_standings_options(options: dict) -> StandingsOptions:
     o = options if isinstance(options, dict) else {}
     scope = o.get("scope") if o.get("scope") in SCOPES else "all"
-    try:
-        rows = int(o.get("rows", DEFAULT_ROWS))
-    except (TypeError, ValueError):
-        rows = DEFAULT_ROWS
-    rows = 0 if rows <= 0 else min(max(rows, 6), 40)  # 0 = automático
     raw = o.get("columns") if isinstance(o.get("columns"), dict) else {}
     cols = frozenset(k for k in COLUMN_KEYS
                      if (raw[k] if isinstance(raw.get(k), bool) else (k in DEFAULT_COLUMNS)))
-    return StandingsOptions(scope, rows, cols, o.get("show_profile", True) is not False,
-                            o.get("animations", True) is not False)
+    def count(key, default, lo, hi):
+        try:
+            return min(max(int(o.get(key, default)), lo), hi)
+        except (TypeError, ValueError):
+            return default
+
+    font = o.get("font")
+    return StandingsOptions(scope, cols, o.get("show_profile", True) is not False,
+                            o.get("animations", True) is not False,
+                            count("top_rows", DEFAULT_TOP_ROWS, *TOP_ROW_RANGE),
+                            count("around_rows", DEFAULT_AROUND_ROWS, *AROUND_ROW_RANGE),
+                            count("other_top", DEFAULT_OTHER_TOP, *OTHER_RANGE),
+                            count("other_around", DEFAULT_OTHER_AROUND, *OTHER_RANGE),
+                            font.strip()[:80] if isinstance(font, str) else "")
 
 
 @dataclass(frozen=True)
@@ -120,7 +132,9 @@ def standings_design_size(options: dict) -> tuple[float, float]:
     opts = get_standings_options(options)
     cols = column_layout(opts)
     width = cols[-1].x + cols[-1].w + PAD
-    rows = opts.rows or DEFAULT_ROWS  # automático: o tamanho "natural" usa as linhas padrão
+    # tamanho "natural": minha classe (cabeçalho + topo + corte + em volta) e, de exemplo, 2 outras classes
+    other = (1 + opts.other_top + opts.other_around) if (opts.other_top + opts.other_around) else 0
+    rows = min(1 + opts.top_rows + (1 if opts.top_rows else 0) + opts.around_rows + 2 * other, MAX_AUTO_ROWS)
     height = TOP_H + rows * ROW_H + (FOOTER_H if opts.show_profile else 0.0) + PAD_BOTTOM
     return width, height
 
@@ -145,10 +159,10 @@ def fit_columns(opts: StandingsOptions, avail_w: float) -> list[ColumnSpec]:
 
 
 def fit_rows(opts: StandingsOptions, avail_h: float) -> int:
-    """Quantas linhas (cabeçalhos de classe incluídos) cabem na altura disponível; `opts.rows` é o teto."""
+    """Quantas linhas (cabeçalhos de classe incluídos) cabem na altura disponível; o teto é MAX_AUTO_ROWS."""
     footer = FOOTER_H if opts.show_profile else 0.0
     fit = int((avail_h - TOP_H - footer - PAD_BOTTOM) // ROW_H)
-    cap = opts.rows if opts.rows > 0 else MAX_AUTO_ROWS
+    cap = MAX_AUTO_ROWS  # o teto de linhas agora vem de Rows/Multiclass (topo + em volta), não de um número fixo
     return max(MIN_ROWS, min(cap, fit))
 
 
@@ -427,6 +441,57 @@ def select_rows(rows: Sequence[T], player_index: Optional[int], max_rows: int,
     k = max_rows - top - 1  # reserva uma vaga para o separador
     a = min(max(player_index - k // 2, top), n - k)
     return list(rows[:top]) + [None] + list(rows[a:a + k])
+
+
+def select_window(rows: Sequence[T], player_index: int, top: int, around: int) -> list[Optional[T]]:
+    """Minha classe: os `top` primeiros + `around` carros em volta de mim (eu no meio), com um corte (None)
+    entre os dois blocos; se a janela encosta no topo, vira uma lista contínua."""
+    n = len(rows)
+    a = min(max(player_index - around // 2, 0), max(n - around, 0))
+    end = min(a + around, n)
+    if a <= top:
+        return list(rows[:max(top, end)])
+    return list(rows[:top]) + [None] + list(rows[a:end])
+
+
+def select_other_class(g: "Group", me_position: Optional[int], top: int, around: int) -> list[StandingsRow]:
+    """Outra classe: os `top` primeiros e os `around` carros mais perto de mim na classificação geral."""
+    rows = g.rows
+    chosen = set(range(min(top, len(rows))))
+    if around > 0 and me_position:
+        rest = [i for i in range(len(rows)) if i not in chosen]
+        rest.sort(key=lambda i: (abs((rows[i].car.position or 10 ** 6) - me_position), i))
+        chosen.update(rest[:around])
+    return [rows[i] for i in sorted(chosen)]
+
+
+def select_lines_by_counts(groups: list[Group], max_lines: int, opts: StandingsOptions) -> list[Line]:
+    """Linhas visíveis pelas contagens das opções (Rows topo/em volta; Multiclass topo/em volta).
+
+    Sem piloto na lista (espectador) cai no cálculo automático. A altura da janela continua sendo o teto: se não
+    couber, corta do fim preservando a linha do piloto."""
+    pg = next((i for i, g in enumerate(groups) if any(r.is_player for r in g.rows)), None)
+    if pg is None or max_lines <= 0:
+        return select_lines(groups, max_lines)
+    me = next(r for r in groups[pg].rows if r.is_player)
+    lines: list[Line] = []
+    for k, g in enumerate(groups):
+        if k == pg:
+            idx = next(i for i, r in enumerate(g.rows) if r.is_player)
+            shown = select_window(g.rows, idx, opts.top_rows, opts.around_rows)
+        else:
+            if opts.other_top <= 0 and opts.other_around <= 0:
+                continue  # sem carros de outras classes: nem o cabeçalho aparece
+            shown = select_other_class(g, me.car.position, opts.other_top, opts.other_around)
+        lines.append(HeaderLine(g.label, g.color, g.header_count))
+        lines.extend(shown)
+    while len(lines) > max_lines:
+        idx = next((i for i in range(len(lines) - 1, -1, -1)
+                    if not (isinstance(lines[i], StandingsRow) and lines[i].is_player)), None)
+        if idx is None:
+            break
+        lines.pop(idx)
+    return lines
 
 
 def select_lines(groups: list[Group], max_lines: int, top: int = 3) -> list[Line]:

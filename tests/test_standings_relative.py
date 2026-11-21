@@ -493,18 +493,20 @@ class TestSelection(unittest.TestCase):
 
 class TestStandingsLayout(unittest.TestCase):
     def test_options_sanitized(self):
-        o = get_standings_options({"scope": "xx", "rows": "abc", "columns": {"best": False, "tire": True, "zzz": True},
+        o = get_standings_options({"scope": "xx", "top_rows": "abc", "columns": {"best": False, "tire": True, "zzz": True},
                                    "show_profile": False})
-        self.assertEqual((o.scope, o.rows, o.show_profile), ("all", 18, False))
+        self.assertEqual((o.scope, o.top_rows, o.show_profile), ("all", 3, False))
         self.assertNotIn("best", o.columns)
         self.assertIn("tire", o.columns)
         self.assertNotIn("zzz", o.columns)
-        self.assertEqual(get_standings_options({"rows": 1}).rows, 6)
-        self.assertEqual(get_standings_options({"rows": 99}).rows, 40)
+        self.assertEqual(get_standings_options({"around_rows": 0}).around_rows, 1)
+        self.assertEqual(get_standings_options({"around_rows": 99}).around_rows, 40)
+        self.assertEqual(get_standings_options({"around_rows": "12"}).around_rows, 12)
+        self.assertEqual(get_standings_options({"other_top": -3}).other_top, 0)
+        self.assertEqual(get_standings_options({"font": "  Roboto "}).font, "Roboto")
+        self.assertEqual(get_standings_options({"font": 5}).font, "")
         self.assertEqual(get_standings_options({}).columns, frozenset(
             {"flag", "license", "brand", "delta", "tire", "laps", "int", "gap", "best", "last", "nrg"}))
-        self.assertEqual(get_standings_options({"rows": 0}).rows, 0)  # 0 = automático (preenche a janela)
-        self.assertEqual(get_standings_options({"rows": -5}).rows, 0)
 
     def test_columns_never_overlap_and_grow_with_options(self):
         full = get_standings_options({})
@@ -582,25 +584,20 @@ class TestStandingsLayout(unittest.TestCase):
 
     def test_responsive_rows(self):
         opts = get_standings_options({})
-        self.assertEqual(fit_rows(opts, 9999), 18)  # teto = opção "rows"
+        self.assertEqual(fit_rows(opts, 9999), MAX_AUTO_ROWS)  # o teto vem de Rows/Multiclass, não de um número fixo
         h_for = lambda n: TOP_H + n * ROW_H + FOOTER_H + PAD_BOTTOM  # noqa: E731
         self.assertEqual(fit_rows(opts, h_for(10)), 10)
         self.assertEqual(fit_rows(opts, h_for(10) - 1), 9)  # uma linha só entra inteira
         self.assertEqual(fit_rows(opts, 50), MIN_ROWS)  # nunca menos que o mínimo
         no_footer = get_standings_options({"show_profile": False})
         self.assertEqual(fit_rows(no_footer, h_for(10)), 11)  # sem rodapé, sobra espaço para mais uma
-        auto = get_standings_options({"rows": 0})
-        self.assertEqual(fit_rows(auto, 9999), MAX_AUTO_ROWS)  # automático: preenche a janela
-        self.assertEqual(fit_rows(auto, h_for(25)), 25)
-        fixed = get_standings_options({"rows": 12})
-        self.assertEqual(fit_rows(fixed, 9999), 12)
-        self.assertEqual(fit_rows(fixed, h_for(7)), 7)
+        self.assertEqual(fit_rows(opts, h_for(25)), 25)  # preenche a altura da janela, até o teto
 
     def test_design_size_rows_and_footer(self):
         w, h = standings_design_size({})
         self.assertEqual(h, TOP_H + 18 * ROW_H + FOOTER_H + 6.0)
         self.assertEqual(standings_design_size({"show_profile": False})[1], h - FOOTER_H)
-        self.assertEqual(standings_design_size({"rows": 26})[1] - h, 8 * ROW_H)
+        self.assertEqual(standings_design_size({"top_rows": 10, "around_rows": 15})[1] - h, 15 * ROW_H)
         self.assertEqual((MODULES["standings"].design_w, MODULES["standings"].design_h), (round(w), round(h)))
         rel_h = rel_core.HEADER_H + 7 * rel_core.ROW_H + rel_core.FOOTER_H
         self.assertEqual(design_size("relative", {}), (rel_core.DESIGN_W, rel_h))

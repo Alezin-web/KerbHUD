@@ -41,14 +41,21 @@ def clear_font_caches() -> None:
     _FIT_CACHE.clear()
 
 
+_FAMILY = [""]  # fonte escolhida pelo usuário para o módulo que está sendo desenhado ("" = padrão do KerbHUD)
+
+
+def set_font_family(name: str) -> None:
+    _FAMILY[0] = name or ""
+
+
 def make_font(px: float, bold: bool = False, semibold: bool = False) -> QFont:
     """Fonte esportiva (Bahnschrift). `semibold` = peso intermediário. Objetos são reaproveitados:
     criar um QFont a cada texto, 30 vezes por segundo, é desperdício."""
-    key = (px, bold, semibold)
+    key = (px, bold, semibold, _FAMILY[0])
     f = _FONT_CACHE.get(key)
     if f is None:
         f = QFont()
-        f.setFamilies(theme.FONT_FAMILIES)
+        f.setFamilies([_FAMILY[0]] + theme.FONT_FAMILIES if _FAMILY[0] else theme.FONT_FAMILIES)
         f.setPixelSize(max(1, int(px)))
         if bold:
             f.setBold(True)
@@ -67,7 +74,7 @@ def fit_font(p: QPainter, text: str, max_px: float, avail: float, bold: bool = T
     Usada nos nomes e nos números: eles aparecem inteiros e a fonte encolhe se for preciso. O
     resultado é guardado por (texto, tamanho, espaço): o texto de um piloto raramente muda.
     """
-    key = (text, max_px, avail, bold, min_px)
+    key = (text, max_px, avail, bold, min_px, _FAMILY[0])
     px = _FIT_CACHE.get(key)
     if px is None:
         def measure(candidate: float) -> float:
@@ -89,8 +96,10 @@ class ModuleWindow(QWidget):
     #: True enquanto o módulo tem uma animação em curso (o gerenciador pede novo desenho)
     is_animating = False
     #: True = TEXTO DE TAMANHO FIXO: a janela só define a área visível (mais/menos linhas e colunas); o
-    #: tamanho do texto vem de `options["scale"]` e só muda com a roda do mouse / menu "Tamanho do texto".
+    #: tamanho do texto vem de `options["scale"]` e só muda arrastando o quadrado vermelho (modo de edição) / menu "Tamanho do texto".
     FIXED_SCALE = False
+    #: True = o módulo respeita `options["font"]` (nome de uma fonte instalada)
+    USES_FONT_OPTION = False
     PANEL_BG = True  # False = sem quadro de fundo (só o conteúdo, como o Track Map)
     SCALE_PX_MIN, SCALE_PX_MAX = 0.35, 3.0  # limites de px reais por unidade de desenho
 
@@ -277,7 +286,13 @@ class ModuleWindow(QWidget):
         p.save()
         p.scale(s, s)
         p.setClipRect(QRectF(0, 0, aw, ah))
-        self.paint_content(p, aw, ah)
+        if self.USES_FONT_OPTION:
+            font = self.options.get("font")
+            set_font_family(font if isinstance(font, str) else "")
+        try:
+            self.paint_content(p, aw, ah)
+        finally:
+            set_font_family("")  # o próximo módulo volta para a fonte padrão
         p.restore()
         if self._edit:
             self._paint_edit_chrome(p, w, h, radius)
@@ -315,6 +330,7 @@ class ModuleWindow(QWidget):
         self._drag_mode = hit_test(pos.x(), pos.y(), self.width(), self.height())
         self._drag_origin = e.globalPosition().toPoint()
         self._drag_start = self._geom()
+        self._drag_scale = self.fixed_scale_px() if self.FIXED_SCALE else None
 
     def mouseMoveEvent(self, e) -> None:  # noqa: N802
         if not self._edit:
@@ -328,10 +344,32 @@ class ModuleWindow(QWidget):
                 self.setCursor(_CURSORS.get(mode, Qt.ArrowCursor))
             return
         d = e.globalPosition().toPoint() - self._drag_origin
+        if self.FIXED_SCALE and self._drag_mode != "move" and self._drag_scale:
+            self._scale_by_drag(d.x(), d.y())  # borda ou canto do quadrado vermelho = muda a escala (texto + janela)
+            return
         grid = None if (e.modifiers() & Qt.AltModifier) else GRID
         x, y, w, h = compute_drag(self._drag_mode, self._drag_start, d.x(), d.y(),
                                   (self.spec.min_w, self.spec.min_h), grid)
         self.setGeometry(x, y, w, h)
+
+    def _scale_by_drag(self, dx: int, dy: int) -> None:
+        """Arrastar uma borda ou um canto muda a escala mantendo a proporção; o lado oposto fica parado.
+        Borda direita/esquerda e cantos seguem a largura; borda de cima/baixo segue a altura."""
+        x, y, w, h = self._drag_start
+        mode = self._drag_mode
+        if "l" in mode or "r" in mode:
+            f = (w + (dx if "r" in mode else -dx)) / max(w, 1)  # puxar para fora aumenta
+        else:
+            f = (h + (dy if "b" in mode else -dy)) / max(h, 1)
+        f = max(f, 0.05)
+        new = min(max(self._drag_scale * f, self.SCALE_PX_MIN), self.SCALE_PX_MAX)
+        f = new / self._drag_scale
+        nw, nh = max(int(round(w * f)), self.spec.min_w), max(int(round(h * f)), self.spec.min_h)
+        nx = x if "l" not in mode else x + w - nw
+        ny = y if "t" not in mode else y + h - nh
+        self.options["scale"] = new / self._ref_width
+        self.setGeometry(nx, ny, nw, nh)
+        self.update()
 
     def mouseReleaseEvent(self, e) -> None:  # noqa: N802
         if self._edit and self._drag_mode is not None and e.button() == Qt.LeftButton:
@@ -339,14 +377,11 @@ class ModuleWindow(QWidget):
             self.geometry_committed.emit(self.module_id)
 
     def wheelEvent(self, e) -> None:  # noqa: N802
-        """Roda = zoom (tamanho do texto no Standings/Inputs). Ctrl + roda = transparência."""
+        """Só Ctrl + roda (transparência). A escala NÃO muda mais pela roda: arraste o quadrado vermelho (borda ou canto)."""
         if not self._edit:
             return
         steps = e.angleDelta().y() / 120.0
-        if steps == 0:
+        if steps == 0 or not (e.modifiers() & Qt.ControlModifier):
             return
-        if e.modifiers() & Qt.ControlModifier:
-            self.set_opacity(self._opacity + 0.05 * steps)
-        else:
-            self.zoom(1.0 + 0.05 * steps)  # tamanho do texto (módulos de escala fixa) ou da janela inteira
+        self.set_opacity(self._opacity + 0.05 * steps)
         self.geometry_committed.emit(self.module_id)

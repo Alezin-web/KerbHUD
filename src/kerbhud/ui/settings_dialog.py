@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from PySide6.QtGui import QKeySequence
+from PySide6.QtGui import QFontDatabase, QKeySequence
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
                                QHBoxLayout, QKeySequenceEdit, QLabel, QLineEdit, QListWidget, QMessageBox,
-                               QPushButton, QTabWidget, QToolButton, QVBoxLayout, QWidget)
+                               QPushButton, QSpinBox, QTabWidget, QToolButton, QVBoxLayout, QWidget)
 
 from ..core import updater
 from ..core.i18n import LANGUAGES, module_title, tr
@@ -285,7 +285,17 @@ class ModuleConfigDialog(QDialog):
         form = QFormLayout()
         for o in specs_for(mid):
             cur = o.get(opts)
-            if o.kind == "bool":
+            if o.kind == "int":  # número digitado pela pessoa
+                sp = QSpinBox()
+                sp.setRange(*o.choices)
+                sp.setValue(int(cur))
+                sp.valueChanged.connect(lambda v, k=o.key: manager.set_option(mid, k, int(v)))
+                form.addRow(tr(o.label), sp)
+            elif o.kind == "font":  # fontes instaladas no Windows; "Padrão" = a fonte do KerbHUD
+                cb = _combo([("", "Padrão")] + [(f, f) for f in QFontDatabase.families()], cur)
+                cb.currentIndexChanged.connect(lambda _i, c=cb, k=o.key: manager.set_option(mid, k, c.currentData() or ""))
+                form.addRow(tr(o.label), cb)
+            elif o.kind == "bool":
                 w = QCheckBox(tr(o.label))
                 w.setChecked(bool(cur))
                 w.toggled.connect(lambda on, k=o.key: manager.set_option(mid, k, bool(on)))
