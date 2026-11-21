@@ -182,32 +182,48 @@ class StandingsModule(ModuleWindow):
 
     # ---- barra superior -------------------------------------------------- #
     @staticmethod
-    def _text(p: QPainter, x: float, text: str, px: int, color: str, bold: bool = True) -> float:
+    def _text(p: QPainter, x: float, text: str, px: int, color: str, bold: bool = True, draw: bool = True) -> float:
         """Desenha um texto na linha de cima da barra e devolve a posição logo depois dele."""
         p.setPen(QColor(color))
         p.setFont(make_font(px, bold))
         tw = p.fontMetrics().horizontalAdvance(text)
-        p.drawText(QRectF(x, 1, tw + 4, 24), Qt.AlignLeft | Qt.AlignVCenter, text)
+        if draw:
+            p.drawText(QRectF(x, 1, tw + 4, 24), Qt.AlignLeft | Qt.AlignVCenter, text)
         return x + tw
+
+    def _info_row(self, p: QPainter, bar, draw: bool) -> float:
+        """Itens da linha de cima da barra (tempo, incidentes, volta, pilotos), da esquerda para a direita conforme a
+        largura real de cada texto. Com `draw=False` só mede e devolve onde a linha termina (em unidades de projeto)."""
+        if draw:
+            icons.session_badge(p, 14 + INFO_BADGE_R, 13, INFO_BADGE_R, bar.letter)
+        x = self._text(p, 14 + 2 * INFO_BADGE_R + 8, bar.time_text or bar.name, INFO_FONT_PX, theme.WHITE, draw=draw) + 24
+        if bar.incidents_text:  # X tomados / limite: ícone colado ao número, número em branco
+            if draw:
+                icons.x_icon(p, x + 7, 13, 12, theme.RED)
+            x = self._text(p, x + 19, bar.incidents_text, INFO_FONT_PX, theme.WHITE, draw=draw) + 24
+        if bar.lap_text:  # "Lap" colado ao valor (volta atual / total ou estimado)
+            p.setFont(make_font(INFO_LABEL_PX))
+            lap_w = p.fontMetrics().horizontalAdvance("Lap")
+            self._text(p, x, "Lap", INFO_LABEL_PX, theme.GRAY, bold=False, draw=draw)
+            x = self._text(p, x + lap_w + 4, bar.lap_text, INFO_FONT_PX, theme.WHITE, draw=draw) + 24
+        if draw:
+            icons.helmet(p, x, 2, INFO_HELMET_PX, theme.GRAY)  # pilotos na corrida
+        return self._text(p, x + INFO_HELMET_PX * 1.2 + 6, str(bar.cars_count), INFO_FONT_PX, theme.WHITE, draw=draw)
 
     def _top_bar(self, p: QPainter, w: float, view: StandingsView, cols: list[ColumnSpec], hf: float = 1.0,
                  df: float = 1.0) -> None:
         bar = view.bar
+        # a linha de cima nunca invade os títulos das colunas: se o "Tamanho do cabeçalho" não couber, encolhe só o
+        # necessário (mínimo 60% do tamanho de sempre)
+        titled = [(c.x + (NRG_ICON_X if c.key == "nrg" else 0.0)) * df for c in cols if _TITLES.get(c.key)]
+        info_scale = hf
+        if titled:
+            width = float(self._info_row(p, bar, draw=False))
+            if width > 0:
+                info_scale = min(hf, max((min(titled) - 14) / width, 0.6))
         p.save()
-        p.scale(hf, hf)  # "Tamanho do cabeçalho": tempo, incidentes, volta e pilotos
-        icons.session_badge(p, 14 + INFO_BADGE_R, 13, INFO_BADGE_R, bar.letter)
-        # os itens fluem da esquerda para a direita conforme a largura real de cada texto
-        x = self._text(p, 14 + 2 * INFO_BADGE_R + 8, bar.time_text or bar.name, INFO_FONT_PX, theme.WHITE) + 24
-        if bar.incidents_text:  # X tomados / limite: ícone colado ao número, número em branco
-            icons.x_icon(p, x + 7, 13, 12, theme.RED)
-            x = self._text(p, x + 19, bar.incidents_text, INFO_FONT_PX, theme.WHITE) + 24
-        if bar.lap_text:  # "Lap" colado ao valor (volta atual / total ou estimado)
-            p.setFont(make_font(INFO_LABEL_PX))
-            lap_w = p.fontMetrics().horizontalAdvance("Lap")
-            self._text(p, x, "Lap", INFO_LABEL_PX, theme.GRAY, bold=False)
-            x = self._text(p, x + lap_w + 4, bar.lap_text, INFO_FONT_PX, theme.WHITE) + 24
-        icons.helmet(p, x, 2, INFO_HELMET_PX, theme.GRAY)  # pilotos na corrida
-        self._text(p, x + INFO_HELMET_PX * 1.2 + 6, str(bar.cars_count), INFO_FONT_PX, theme.WHITE)
+        p.scale(info_scale, info_scale)  # "Tamanho do cabeçalho": tempo, incidentes, volta e pilotos
+        self._info_row(p, bar, draw=True)
         p.restore()
         # títulos das colunas: maiores (17), encolhem só se a coluna for estreita demais (ex.: "Tire").
         # Ficam sobre as colunas (que seguem o "Tamanho dos pilotos") e usam o tamanho do cabeçalho.

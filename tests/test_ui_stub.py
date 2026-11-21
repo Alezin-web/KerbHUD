@@ -1489,6 +1489,25 @@ class TestUiWithStub(unittest.TestCase):
         self.assertEqual(rel._geom()[2:], (400, 200))
         self.assertNotIn("scale", rel.options)
 
+    def test_big_header_with_small_drivers_never_reaches_the_column_titles(self):
+        self._fake_fonts()
+        win = self.modules.create_module("standings")
+        win.snapshot = self.snap
+        cur = {"px": 10}
+        first_scale = {}
+        for name, opts in (("normal", {}), ("L/XS", {"header_size": "L", "driver_size": "XS"})):
+            win.options = {"scale": 0.0005, **opts}
+            p = MagicMock()
+            p.setFont.side_effect = lambda f: cur.update(px=f.px)
+            p.fontMetrics.return_value.horizontalAdvance.side_effect = lambda t: len(t) * cur["px"] * 0.62
+            win.paint_content(p, 3000, 3000)
+            first_scale[name] = next(c[1][0] for c in p.mock_calls if c[0] == "scale")
+        self.assertLessEqual(first_scale["normal"], 1.0)
+        # cabeçalho L pediria 1.3x, mas com linhas XS os títulos sobem para a esquerda: a barra encolhe para caber
+        self.assertLess(first_scale["L/XS"], 1.3)
+        self.assertLess(first_scale["L/XS"], first_scale["normal"])
+        self.assertGreaterEqual(first_scale["L/XS"], 0.6)
+
     def test_standings_header_and_driver_size(self):
         win = self.modules.create_module("standings")
         win.snapshot = self.snap

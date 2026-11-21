@@ -60,6 +60,8 @@ SPECS: dict[str, tuple[Opt, ...]] = {
             tuple((s, s) for s in SIZE_CHOICES)),
         Opt("font", "Fonte", "font", lambda o: get_standings_options(o).font),
         Opt("animations", "Animações de ultrapassagem", "bool", lambda o: get_standings_options(o).animations),
+        Opt("hide_until_timed", "Treino/Qualy: esconder até alguém fazer um tempo", "bool",
+            lambda o: get_standings_options(o).hide_until_timed),
         Opt("show_profile", "Meu perfil no rodapé", "bool", lambda o: get_standings_options(o).show_profile),
         Opt("columns", "Colunas", "multi", lambda o: set(get_standings_options(o).columns),
             tuple((k, COLUMN_LABELS[k]) for k in COLUMN_KEYS), apply="column"),

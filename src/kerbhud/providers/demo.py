@@ -210,6 +210,7 @@ STAGES: dict[str, Stage] = {s.key: s for s in [
 #: Novidades que o DEMO precisa exibir: recurso -> etapa onde aparece. Ao criar um recurso novo, acrescente aqui.
 DEMO_FEATURES: dict[str, str] = {
     "standings_escondido_ate_1o_tempo": "treino",
+    "standings_visivel_em_treino_se_a_opcao_for_desligada": "treino",
     "pilotos_saem_ficam_apagados": "corrida",
     "fim_de_corrida_todos_saem": "corrida",
     "varias_classes_e_cabecalhos": "corrida",

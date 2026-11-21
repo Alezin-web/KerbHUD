@@ -84,6 +84,7 @@ class StandingsOptions:
     font: str = ""  # "" = fonte padrão do KerbHUD; senão o nome de uma fonte instalada
     header_size: str = "S"  # barra do topo (tempo, incidentes, volta, títulos das colunas): XS, S, M, L
     driver_size: str = "S"  # linhas dos pilotos (e cabeçalhos de classe)
+    hide_until_timed: bool = True  # treino/qualy: o módulo fica invisível até alguém fazer um tempo de volta
 
     @property
     def header_factor(self) -> float:
@@ -123,7 +124,8 @@ def get_standings_options(options: dict) -> StandingsOptions:
                             count("other_around", DEFAULT_OTHER_AROUND, *OTHER_RANGE),
                             font.strip()[:80] if isinstance(font, str) else "",
                             o.get("header_size") if o.get("header_size") in SIZE_CHOICES else "S",
-                            o.get("driver_size") if o.get("driver_size") in SIZE_CHOICES else "S")
+                            o.get("driver_size") if o.get("driver_size") in SIZE_CHOICES else "S",
+                            o.get("hide_until_timed", True) is not False)
 
 
 @dataclass(frozen=True)
@@ -376,13 +378,18 @@ def build_standings(snap: Snapshot, opts: StandingsOptions, pos_changes: Optiona
         positioned = sorted((c for c in snap.cars if c.position), key=lambda c: c.position or 0)
         all_cars = positioned + [c for c in snap.cars if not c.position]
     else:
-        all_cars = ranked_by_time(snap.cars)  # treino/qualy: só quem fez tempo
+        all_cars = ranked_by_time(snap.cars)  # treino/qualy: quem fez tempo, do mais rápido ao mais lento
+        if not opts.hide_until_timed:  # opção desligada: todos aparecem; quem ainda não fez tempo vem depois, sem posição
+            untimed = [replace(c, position=None, class_position=None) for c in snap.cars
+                       if not lap_time(c) and c.in_session]
+            untimed.sort(key=lambda c: (c.class_name or "", c.idx))
+            all_cars = all_cars + untimed
     view.total = len(all_cars)
     me = snap.player()
     deltas = ir_deltas(all_cars) if race else {}
     view.chips = profile_chips(snap, deltas.get(me.idx) if me else None)
     if not all_cars:
-        view.hidden = not race  # sem tempos ainda: o módulo nem aparece
+        view.hidden = not race and opts.hide_until_timed  # sem tempos ainda: o módulo nem aparece (se a opção estiver ligada)
         return view
     class_totals = Counter(c.class_name for c in snap.cars if c.in_session)
 

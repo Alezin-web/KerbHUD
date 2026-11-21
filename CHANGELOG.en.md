@@ -1,6 +1,11 @@
+## 0.17.11 — Optional Standings in practice/qualy and top bar fix
+
+* **Standings in Practice and Qualy:** new option "Practice/Qualy: hide until someone sets a lap time" (Standings Config; on by default, as before). When off, Standings shows from the start with **all drivers** (those without a time come after, with "—"), with no waiting message.
+* **Top bar:** with Header L and Drivers XS the bar ran into the column titles; it now shrinks by itself just enough to fit.
+
 ## 0.17.10 — Header and driver size in Standings
 
-* **Standings — Header size** (XS, S, M, L): changes the top bar (time, incidents, lap, drivers and the column titles). **Driver size** (XS, S, M, L): changes the driver rows and the class headers. "S" is the usual size.
+* **Standings — Header size** (XS, S, M, L): changes the top bar (time, incidents, lap, drivers and the column titles). **Driver size** (XS, S, M, L): changes the driver rows and the class headers. "S" is the usual size. The top bar shrinks by itself just enough to never run into the column titles (for example Header L with Drivers XS).
 
 ## 0.17.9 — Scale by the red square and new Standings options
 

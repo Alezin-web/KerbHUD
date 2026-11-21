@@ -1,6 +1,11 @@
+## 0.17.11 — Standings em treino/qualy opcional e ajuste da barra do topo
+
+* **Standings em Practice e Qualy:** nova opção "Treino/Qualy: esconder até alguém fazer um tempo" (Config do Standings; ligada por padrão, como era). Desligada, o Standings aparece desde o começo com **todos os pilotos** (quem ainda não fez tempo vem depois, com "—"), sem mensagem de espera.
+* **Barra do topo:** com Cabeçalho L e Pilotos XS a barra invadia os títulos das colunas; agora ela encolhe sozinha só o necessário para caber.
+
 ## 0.17.10 — Tamanho do cabeçalho e dos pilotos no Standings
 
-* **Standings — Tamanho do cabeçalho** (XS, S, M, L): muda a barra do topo (tempo, incidentes, volta, pilotos e os títulos das colunas). **Tamanho dos pilotos** (XS, S, M, L): muda as linhas dos pilotos e os cabeçalhos de classe. "S" é o tamanho de sempre.
+* **Standings — Tamanho do cabeçalho** (XS, S, M, L): muda a barra do topo (tempo, incidentes, volta, pilotos e os títulos das colunas). **Tamanho dos pilotos** (XS, S, M, L): muda as linhas dos pilotos e os cabeçalhos de classe. "S" é o tamanho de sempre. A barra do topo encolhe sozinha só o necessário para nunca invadir os títulos das colunas (por exemplo, Cabeçalho L com Pilotos XS).
 
 ## 0.17.9 — Escala pelo quadrado vermelho e novas opções do Standings
 

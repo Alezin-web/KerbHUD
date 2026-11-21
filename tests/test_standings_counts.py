@@ -77,3 +77,24 @@ class CountsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HideUntilTimedTest(unittest.TestCase):
+    def test_option_controls_the_hidden_standings_in_practice(self):
+        cars = [car(1, 1, "GT3"), car(2, 2, "GT3")]  # ninguém fez tempo
+        s = snap(cars, session_type="Practice", me=1)
+        self.assertTrue(build_standings(s, get_standings_options({})).hidden)  # padrão: como sempre
+        v = build_standings(s, get_standings_options({"hide_until_timed": False}))
+        self.assertFalse(v.hidden)
+        self.assertEqual(sorted(r.car.idx for r in v.rows), [1, 2])  # todos os pilotos aparecem, sem mensagem de espera
+        self.assertEqual([r.pos_text for r in v.rows], ["—", "—"])  # sem tempo: sem posição inventada
+
+    def test_timed_cars_come_first_then_the_ones_without_time(self):
+        cars = [car(1, 1, "GT3"), car(2, 2, "GT3", best_lap=95.0), car(3, 3, "GT3", last_lap=97.0)]
+        v = build_standings(snap(cars, session_type="Qualify", me=1), get_standings_options({"hide_until_timed": False}))
+        self.assertEqual([r.car.idx for r in v.rows], [2, 3, 1])
+        self.assertEqual([r.pos_text for r in v.rows], ["1", "2", "—"])
+
+    def test_race_is_never_hidden(self):
+        s = snap([car(1, 1, "GT3")], session_type="Race", me=1)
+        self.assertFalse(build_standings(s, get_standings_options({})).hidden)

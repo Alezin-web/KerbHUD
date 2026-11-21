@@ -10,7 +10,7 @@ from kerbhud.core.module_options import specs_for
 from kerbhud.core.radar import radar_view
 from kerbhud.core.spotter import side_traffic
 from kerbhud.core.tireview import tire_view
-from kerbhud.core.standings import NrgTracker, StandingsOptions, build_standings
+from kerbhud.core.standings import NrgTracker, StandingsOptions, build_standings, get_standings_options
 from kerbhud.providers.demo import DEMO_FEATURES, STAGES, TOUR, DemoProvider
 
 
@@ -21,6 +21,9 @@ def at(stage, t):
 
 
 CHECKS = {
+    "standings_visivel_em_treino_se_a_opcao_for_desligada": lambda: not build_standings(
+        at("treino", 5), get_standings_options({"hide_until_timed": False})).hidden
+    and len(build_standings(at("treino", 5), get_standings_options({"hide_until_timed": False})).rows) > 1,
     "standings_escondido_ate_1o_tempo": lambda: build_standings(at("treino", 5), StandingsOptions()).hidden
     and not build_standings(at("treino", 12), StandingsOptions()).hidden,
     "pilotos_saem_ficam_apagados": lambda: any(not c.in_session for c in _race_end()),
