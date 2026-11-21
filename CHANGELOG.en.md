@@ -1,3 +1,7 @@
+## 0.17.8 — Seconds in the session time
+
+* **Session time with seconds:** the top bar of Standings and Relative now shows the total with seconds too (`00:20:07 / 00:45:00`, previously `00:45m`).
+
 ## 0.17.7 — Manufacturer from the team in Le Mans Ultimate
 
 * **Manufacturer logo in LMU:** the car name in LMU only mentions the team ("Proton Competition 2025 #99"). KerbHUD now has its own team/number → manufacturer table (cross-checked with TinyPedal's list), so Hypercars and GTs show the right brand, including teams that run different cars per class.

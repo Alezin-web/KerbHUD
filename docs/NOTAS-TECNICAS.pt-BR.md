@@ -456,7 +456,7 @@ Nestes dois módulos **a janela e o texto são independentes**: arrastar as bord
 Seguem o estilo dos prints de referência (tabela por classe, pílulas de licença/iRating, caixas de gap).
 
 **STANDINGS**
-* **Barra superior:** inicial da sessão (R, Q, P, W, T), tempo decorrido / duração (`00:20:07 / 00:45m`),
+* **Barra superior:** inicial da sessão (R, Q, P, W, T), tempo decorrido / duração (`00:20:07 / 00:45:00`),
   incidentes `X 6/25`, `Lap 12/~25.3` (sua volta / total, ou estimado em corrida por tempo) e a
   quantidade de pilotos (capacete). Os títulos das colunas ficam na linha de baixo.
 * **Grupos por classe:** cada classe tem um cabeçalho com **ícone de capacete + quantidade de pilotos da classe** + nome (texto e capacete em preto sobre cores claras como o azul do LMP2 e em branco sobre cores escuras, com a viseira "vazada" na cor da classe), e a posição é a posição NA CLASSE. Int (para o

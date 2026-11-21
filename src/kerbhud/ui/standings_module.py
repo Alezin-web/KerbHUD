@@ -187,15 +187,15 @@ class StandingsModule(ModuleWindow):
         bar = view.bar
         icons.session_badge(p, 14 + INFO_BADGE_R, 13, INFO_BADGE_R, bar.letter)
         # os itens fluem da esquerda para a direita conforme a largura real de cada texto
-        x = self._text(p, 14 + 2 * INFO_BADGE_R + 8, bar.time_text or bar.name, INFO_FONT_PX, theme.WHITE) + 28
+        x = self._text(p, 14 + 2 * INFO_BADGE_R + 8, bar.time_text or bar.name, INFO_FONT_PX, theme.WHITE) + 24
         if bar.incidents_text:  # X tomados / limite: ícone colado ao número, número em branco
             icons.x_icon(p, x + 7, 13, 12, theme.RED)
-            x = self._text(p, x + 19, bar.incidents_text, INFO_FONT_PX, theme.WHITE) + 28
+            x = self._text(p, x + 19, bar.incidents_text, INFO_FONT_PX, theme.WHITE) + 24
         if bar.lap_text:  # "Lap" colado ao valor (volta atual / total ou estimado)
             p.setFont(make_font(INFO_LABEL_PX))
             lap_w = p.fontMetrics().horizontalAdvance("Lap")
             self._text(p, x, "Lap", INFO_LABEL_PX, theme.GRAY, bold=False)
-            x = self._text(p, x + lap_w + 4, bar.lap_text, INFO_FONT_PX, theme.WHITE) + 28
+            x = self._text(p, x + lap_w + 4, bar.lap_text, INFO_FONT_PX, theme.WHITE) + 24
         icons.helmet(p, x, 2, INFO_HELMET_PX, theme.GRAY)  # pilotos na corrida
         self._text(p, x + INFO_HELMET_PX * 1.2 + 6, str(bar.cars_count), INFO_FONT_PX, theme.WHITE)
         # títulos das colunas: maiores (17), encolhem só se a coluna for estreita demais (ex.: "Tire")

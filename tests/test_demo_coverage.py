@@ -44,6 +44,7 @@ CHECKS = {
     "piloto_dirigindo_ou_fora_do_carro": lambda: at("treino", 1).driving is False and at("corrida", 5).driving is True,
     "motor_e_configuracao_resilientes": lambda: _resilient_engine_and_settings(),
     "fabricante_pela_equipe_no_lmu": lambda: _lmu_team_brands(),
+    "tempo_da_sessao_com_segundos": lambda: _session_time_has_seconds(),
     "posicao_ao_vivo_na_corrida": lambda: _live_order_matches_positions(),
     "mapa_por_posicao_estimada_iracing": lambda: _estimated_map_ok(),
     "mapa_grava_mesmo_com_box_na_reta": lambda: _map_with_pit_on_the_straight(),
@@ -108,6 +109,14 @@ def _map_done(stage):
     for snap in _walk(stage, 0, 35, 0.04):
         shape = rec.update(snap) or shape
     return shape is not None and len(map_cars(snap, shape)) >= 8
+
+
+def _session_time_has_seconds():
+    """A barra da sessão mostra decorrido / total com segundos (00:10:00 / 02:00:00)."""
+    import re
+    from kerbhud.core.sessioninfo import build_session_bar
+    t = build_session_bar(at("corrida", 5)).time_text
+    return bool(re.fullmatch(r"\d\d:\d\d:\d\d / \d\d:\d\d:\d\d", t))
 
 
 def _lmu_team_brands():

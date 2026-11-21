@@ -708,7 +708,7 @@ class TestUiWithStub(unittest.TestCase):
             icons.helmet = orig
         t = self._texts(p)
         # barra superior: relógio, incidentes, volta atual/estimada, quantidade de pilotos
-        self.assertTrue(any(re.fullmatch(r"\d\d:\d\d:\d\d / 02:00m", x) for x in t), t[:8])
+        self.assertTrue(any(re.fullmatch(r"\d\d:\d\d:\d\d / 02:00:00", x) for x in t), t[:8])
         self.assertIn("R", t)  # inicial da sessão
         self.assertIn("6/25", t)
         self.assertIn("Lap", t)
@@ -833,7 +833,7 @@ class TestUiWithStub(unittest.TestCase):
         self.assertTrue(any(re.fullmatch(r"\d\.\dk", x) for x in t))
         self.assertIn("6/25", t)  # incidentes / limite
         self.assertIn("RACE", t)  # rodapé: sessão
-        self.assertTrue(any(re.fullmatch(r"\d\d:\d\d:\d\d / 02:00m", x) for x in t))
+        self.assertTrue(any(re.fullmatch(r"\d\d:\d\d:\d\d / 02:00:00", x) for x in t))
         self.assertIn("Lap", t)
         self.assertIn("0.0", t)  # minha linha
         self.assertNotIn("RELATIVE", t)  # sem o título antigo
@@ -1099,7 +1099,7 @@ class TestUiWithStub(unittest.TestCase):
         finally:
             icons.x_icon, rm.QColor = orig_x, orig_color
         calls = self._draw_calls(p)
-        race, clock = self._find(calls, "RACE"), self._find(calls, "00:15:00 / 00:45m")
+        race, clock = self._find(calls, "RACE"), self._find(calls, "00:15:00 / 00:45:00")
         self.assertLessEqual(clock.left() - (race.left() + 8 * 4), 8)  # tempo logo depois de "RACE"
         lap, val = self._find(calls, "Lap"), self._find(calls, "12/25")
         gap = (val.left() + 2) - (lap.left() + lap.width() - 2)

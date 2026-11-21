@@ -227,6 +227,7 @@ DEMO_FEATURES: dict[str, str] = {
     "posicao_ao_vivo_na_corrida": "corrida",
     "motor_e_configuracao_resilientes": "corrida",
     "fabricante_pela_equipe_no_lmu": "lmu",
+    "tempo_da_sessao_com_segundos": "corrida",
     "atalho_pula_para_a_proxima_etapa": "treino",
     "disputas_e_voltas_a_frente_atras": "corrida",
     "pits_e_abandono": "corrida",

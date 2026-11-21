@@ -17,7 +17,7 @@ from .textfmt import format_clock, format_remaining, format_total, is_race
 class SessionBar:
     letter: str = "?"  # R, Q, P, W, T
     name: str = ""  # RACE, QUALIFY, PRACTICE...
-    time_text: str = ""  # "00:20:07 / 00:45m"
+    time_text: str = ""  # "00:20:07 / 00:45:00"
     incidents_text: str = ""  # "6/25" ou "6"; vazio = indisponível
     lap_text: str = ""  # "12/~25.3", "12/25" ou "12"
     cars_count: int = 0

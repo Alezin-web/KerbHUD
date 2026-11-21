@@ -48,11 +48,11 @@ def format_clock(seconds: Optional[float]) -> str:
 
 
 def format_total(seconds: Optional[float]) -> str:
-    """Duração total no formato HH:MMm (ex.: 00:45m)."""
+    """Duração total no formato HH:MM:SS (ex.: 00:45:00), igual ao relógio ao lado."""
     if seconds is None or seconds <= 0:
         return ""
-    m = int(round(seconds / 60.0))
-    return f"{m // 60:02d}:{m % 60:02d}m"
+    s = int(round(seconds))
+    return f"{s // 3600:02d}:{(s % 3600) // 60:02d}:{s % 60:02d}"
 
 
 def fit_font_px(max_px: float, avail: float, measure: Callable[[float], float], min_px: float = 11.0,
