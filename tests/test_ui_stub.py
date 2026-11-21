@@ -649,9 +649,10 @@ class TestUiWithStub(unittest.TestCase):
             self.assertEqual(win.modules_panel.rows.keys(), mw.MODULES.keys())
             ctl = MagicMock(); ctl.state, ctl.message, ctl.available, ctl.listeners = "idle", "", None, []
             win.set_updates(ctl)  # barra de atualização ligada ao controlador
-            self.assertEqual(len(ctl.listeners), 1)
+            self.assertEqual(len(ctl.listeners), 2)  # barra de versão + faixa de "nova versão"
             ctl.state, ctl.available = "available", MagicMock(version="9.9.9")
-            ctl.listeners[0]()  # aviso de versão nova atualiza a barra sem erro
+            for cb in ctl.listeners:
+                cb()  # aviso de versão nova atualiza a barra e a faixa sem erro
             import kerbhud.ui.changelog_dialog as cd
             self.assertTrue(hasattr(cd, "ChangelogDialog"))
             ev = MagicMock()

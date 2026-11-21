@@ -67,7 +67,13 @@ TRANSLATIONS: dict[str, str] = {
     "Histórico: {} s": "History: {} s", "Gráfico: {} s": "Graph: {} s", "Reserva: {} volta(s)": "Reserve: {} lap(s)",
     "Alcance: {} m": "Range: {} m", "Pressão em {}": "Pressure in {}",
     "0 volta(s)": "0 lap(s)", "0.5 volta(s)": "0.5 lap(s)", "1 volta(s)": "1 lap(s)", "2 volta(s)": "2 lap(s)",
-    "Fonte": "Font", "Treino/Qualy: esconder até alguém fazer um tempo": "Practice/Qualy: hide until someone sets a lap time", "Tamanho do cabeçalho (barra do topo)": "Header size (top bar)",
+    "Fonte": "Font",
+    "Ver novidades e atualizar": "See what's new and update", "Agora não": "Not now",
+    "Nova versão {} do KerbHUD disponível!": "New KerbHUD version {} available!",
+    "Sugerir melhoria": "Suggest an improvement", "Sugerir melhoria...": "Suggest an improvement...",
+    "⬆ Nova versão {} disponível: atualizar": "⬆ New version {} available: update",
+    "Nova versão {} disponível. Abra a janela do KerbHUD (ou o menu da bandeja) para atualizar.":
+    "New version {} available. Open the KerbHUD window (or the tray menu) to update.", "Treino/Qualy: esconder até alguém fazer um tempo": "Practice/Qualy: hide until someone sets a lap time", "Tamanho do cabeçalho (barra do topo)": "Header size (top bar)",
     "Tamanho dos pilotos (linhas)": "Driver size (rows)", "Padrão": "Default", "Linhas do topo (minha classe)": "Top rows (my class)",
     "Linhas em volta de mim": "Rows around me", "Outras classes: carros do topo (0 e 0 = não mostrar)":
     "Other classes: top cars (0 and 0 = hide them)", "Outras classes: carros perto de mim": "Other classes: cars near me", "Config: {}": "Config: {}", "Aumentar o texto (+10%)": "Increase text (+10%)", "Diminuir o texto (-10%)": "Decrease text (-10%)",

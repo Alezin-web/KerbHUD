@@ -144,6 +144,10 @@ class Tray:
         def hint(action: str) -> str:
             return f"  ({hk[action]})" if hk.get(action) else ""
 
+        if self.updates is not None and self.updates.state == "available" and self.updates.available is not None:
+            up = menu.addAction(tr("⬆ Nova versão {} disponível: atualizar").format(self.updates.available.version),
+                                lambda: self.updates.check())
+            menu.addSeparator()
         menu.addAction(tr("Abrir janela principal"), self.show_window)
         menu.addAction(tr("Configurações..."), self._open_settings)
         menu.addSeparator()
@@ -393,6 +397,7 @@ class Tray:
         about = menu.addAction(f"KerbHUD {__version__}")  # confirma qual versão está rodando
         about.setEnabled(False)
         menu.addAction(tr("Verificar atualizações..."), lambda: self.updates.check() if self.updates else None)
+        menu.addAction(tr("Sugerir melhoria..."), self._suggest)
         menu.addAction(tr("Abrir pasta de dados (logos, flags, layouts...)"), self._open_data)
         menu.addAction(tr("Abrir pasta de configuração"), self._open_config)
         menu.addAction(tr("Baixar bandeiras dos países (internet)..."), self._download_flags)
@@ -597,6 +602,14 @@ class Tray:
             import os
             os.startfile(str(data_dir()))  # noqa: S606
 
+    def _suggest(self) -> None:
+        """Abre a página de nova issue do GitHub (no navegador) já com um modelo; o KerbHUD não envia nada sozinho."""
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        from ..core.feedback import suggestion_url
+        from ..core.updater import effective_repo
+        QDesktopServices.openUrl(QUrl(suggestion_url(effective_repo(self.engine.settings), __version__, get_language())))
+
     @staticmethod
     def _open_log() -> None:
         if winapi.IS_WIN:
@@ -717,6 +730,7 @@ def run(sim: str = "auto", edit: bool = False, demo_scenario: str | None = None)
     window.set_updates(tray.updates)
     if settings.get("check_updates_on_start", True):
         QTimer.singleShot(8000, lambda: tray.updates.check(manual=False))  # avisa na bandeja; não instala sozinho
+        tray.updates.start_periodic()  # e reconfere de tempos em tempos (o programa fica dias aberto na bandeja)
     window.restore_position()
     if settings.get("show_window_at_startup", True):
         window.show()

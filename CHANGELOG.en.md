@@ -1,3 +1,9 @@
+## 0.17.13 — Improvement suggestions and update notice
+
+* **Suggest an improvement:** new button in the main window and items in the Help and tray menus. It opens the project's new-suggestion page on GitHub, with a text template (including the KerbHUD version); you write and send it with your own GitHub account. KerbHUD sends nothing by itself.
+* **More visible update notice:** when there is a new version, a **green banner** appears at the top of the main window ("New version X available" with "See what's new and update" and "Not now" buttons) and an item at the top of the tray menu. The tray balloon notifies once per version. "Not now" hides the banner for that version; a newer version notifies again.
+* KerbHUD now re-checks every 6 hours (before, only on start), since it stays open in the tray for days. It never opens windows by itself: in the middle of a race that would take focus from the game, and installing is always your action.
+
 ## 0.17.12 — Tires: temperature first
 
 * **Tires:** temperature is now the highlight of each tire (big number in the temperature colour + the three zones); wear is smaller, below (before, the big wear number with a bar looked like "load").

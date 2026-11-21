@@ -1,3 +1,9 @@
+## 0.17.13 — Sugestões de melhoria e aviso de atualização
+
+* **Sugerir melhoria:** novo botão na janela principal e itens nos menus Ajuda e da bandeja. Abre a página de nova sugestão do projeto no GitHub, já com um modelo de texto (com a versão do KerbHUD); você escreve e envia pela sua conta do GitHub. O KerbHUD não envia nada sozinho.
+* **Aviso de atualização mais visível:** quando há versão nova, aparece uma **faixa verde** no topo da janela principal ("Nova versão X disponível" com os botões "Ver novidades e atualizar" e "Agora não") e um item no topo do menu da bandeja. O balão da bandeja avisa uma vez por versão. "Agora não" esconde a faixa para aquela versão; uma versão mais nova avisa de novo.
+* O KerbHUD agora reconfere a cada 6 horas (antes só ao abrir), já que fica dias aberto na bandeja. Nunca abre janelas sozinho: no meio de uma corrida isso tiraria o foco do jogo, e instalar continua sendo sempre ação sua.
+
 ## 0.17.12 — Pneus: temperatura em destaque
 
 * **Pneus:** a temperatura agora é o destaque de cada pneu (número grande na cor da temperatura + as três zonas); o desgaste ficou menor, embaixo (antes o número grande de desgaste com barra parecia "carga").

@@ -15,6 +15,7 @@ from .. import __version__
 from ..core.changelog import plain_release_notes
 from ..core.i18n import get_language, tr
 from ..core import updater
+from ..core.updatenotice import RECHECK_HOURS, UpdateNotice
 from ..core.paths import app_root
 
 
@@ -27,6 +28,28 @@ class UpdateController:
         self.state = "idle"  # idle | checking | available | uptodate | error | installing
         self.message = ""
         self.listeners: list[Callable[[], None]] = []
+        self.notice = UpdateNotice(settings.get("update_dismissed", ""))
+        self._timer: Optional[QTimer] = None
+
+    def start_periodic(self) -> None:
+        """Reconfere a cada poucas horas (o programa fica aberto na bandeja por dias); só avisa, nunca instala."""
+        if self._timer is None:
+            self._timer = QTimer()
+            self._timer.timeout.connect(lambda: self.settings.get("check_updates_on_start", True) and self.check(manual=False))
+            self._timer.start(RECHECK_HOURS * 3600 * 1000)
+
+    def banner_visible(self) -> bool:
+        info = self.available
+        return self.state in ("available", "installing") and self.notice.banner_visible(info.version if info else None)
+
+    def dismiss(self) -> None:
+        """"Agora não": esconde a faixa para ESTA versão (uma versão mais nova avisa de novo)."""
+        if self.available is not None:
+            self.notice.dismiss(self.available.version)
+            self.settings["update_dismissed"] = self.available.version
+            self._save("update_dismissed", self.available.version)
+        for cb in list(self.listeners):
+            cb()
 
     def _set(self, state: str, message: str = "") -> None:
         self.state, self.message = state, message
@@ -82,8 +105,9 @@ class UpdateController:
                 QMessageBox.information(None, tr("Atualização"), tr("Você já está na versão mais recente ({}).").format(__version__))
             return
         self._set("available", tr("Nova versão {} disponível").format(info.version))
-        if not manual:  # checagem automática: só avisa, a pessoa decide quando atualizar
-            self.tray.tray.showMessage(tr("KerbHUD"), tr("Nova versão {} disponível. Abra Ajuda → Verificar atualizações.").format(info.version), QSystemTrayIcon.Information, 10000)
+        if not manual:  # checagem automática: só avisa (balão uma vez por versão + faixa na janela), a pessoa decide
+            if self.notice.should_balloon(info.version):
+                self.tray.tray.showMessage(tr("KerbHUD"), tr("Nova versão {} disponível. Abra a janela do KerbHUD (ou o menu da bandeja) para atualizar.").format(info.version), QSystemTrayIcon.Information, 10000)
             return
         self._offer(info)
 

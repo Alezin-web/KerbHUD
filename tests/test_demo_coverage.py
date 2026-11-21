@@ -49,6 +49,7 @@ CHECKS = {
     "motor_e_configuracao_resilientes": lambda: _resilient_engine_and_settings(),
     "fabricante_pela_equipe_no_lmu": lambda: _lmu_team_brands(),
     "tempo_da_sessao_com_segundos": lambda: _session_time_has_seconds(),
+    "sugestao_de_melhoria_e_aviso_de_atualizacao": lambda: _suggestion_and_update_notice(),
     "pneus_com_temperatura_em_destaque": lambda: all(c.temp_c is not None and all(t is not None for t in c.temps)
                                                        for c in tire_view(at("corrida", 12)).cells.values()),
     "escala_pelo_quadrado_vermelho": lambda: _corner_drag_scales_and_wheel_does_not(),
@@ -160,6 +161,17 @@ def _standings_multiclass_and_font():
     both = {r.car.class_name for r in _standings_lines({})}
     mine = {r.car.class_name for r in _standings_lines({"other_top": 0, "other_around": 0})}
     return len(both) > 1 and mine == {me.class_name} and get_standings_options({"font": "Roboto"}).font == "Roboto"
+
+
+def _suggestion_and_update_notice():
+    """Botão de sugestões (abre a página de nova issue com modelo) e aviso de versão nova (faixa dispensável por versão)."""
+    from kerbhud.core.feedback import suggestion_url
+    from kerbhud.core.updatenotice import UpdateNotice
+    n = UpdateNotice()
+    ok = n.banner_visible("9.9.9") and n.should_balloon("9.9.9") and not n.should_balloon("9.9.9")
+    n.dismiss("9.9.9")
+    return ok and not n.banner_visible("9.9.9") and n.banner_visible("10.0.0") \
+        and suggestion_url("Alezin-web/KerbHUD", "0.17.13").startswith("https://github.com/Alezin-web/KerbHUD/issues/new?")
 
 
 def _session_time_has_seconds():

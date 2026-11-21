@@ -89,18 +89,51 @@ class ModulesPanel(QWidget):
             self.m.set_module_show_when(mid, mode)
 
 
+class UpdateBanner(QWidget):
+    """Faixa colorida no topo quando há versão nova (some com "Agora não" para aquela versão)."""
+
+    def __init__(self, controller_getter: Callable[[], object], parent=None):
+        super().__init__(parent)
+        self._ctl = controller_getter
+        self.setStyleSheet("background: #1f8f3a; color: white;")
+        row = QHBoxLayout(self)
+        row.setContentsMargins(10, 8, 10, 8)
+        self.label = QLabel()
+        self.label.setStyleSheet("font-weight: bold; color: white;")
+        self.go = QPushButton(tr("Ver novidades e atualizar"))
+        self.later = QPushButton(tr("Agora não"))
+        self.go.clicked.connect(lambda: self._ctl() and self._ctl().check())
+        self.later.clicked.connect(lambda: self._ctl() and self._ctl().dismiss())
+        row.addWidget(self.label, 1)
+        row.addWidget(self.go)
+        row.addWidget(self.later)
+        self.refresh()
+
+    def refresh(self) -> None:
+        ctl = self._ctl()
+        info = getattr(ctl, "available", None) if ctl is not None else None
+        show = bool(info is not None and ctl.banner_visible())
+        if show:
+            self.label.setText(tr("Nova versão {} do KerbHUD disponível!").format(info.version))
+        self.setVisible(show)
+
+
 class UpdateBar(QWidget):
     """Faixa fixa no topo da janela: versão instalada + botão de verificar/baixar a atualização."""
 
     def __init__(self, controller_getter: Callable[[], object], parent=None):
         super().__init__(parent)
         self._ctl = controller_getter
+        self.on_suggest = None  # ligado pela janela principal ("Sugerir melhoria")
         row = QHBoxLayout(self)
         row.setContentsMargins(8, 6, 8, 6)
         self.label = QLabel(f"KerbHUD {__version__}")
         self.button = QPushButton(tr("Verificar atualizações"))
         self.button.clicked.connect(self._click)
+        self.suggest = QPushButton(tr("Sugerir melhoria"))
+        self.suggest.clicked.connect(lambda: self.on_suggest() if self.on_suggest else None)
         row.addWidget(self.label, 1)
+        row.addWidget(self.suggest)
         row.addWidget(self.button)
         self.refresh()
 
@@ -148,10 +181,13 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.layouts_panel, "Layouts")
         self.tabs.currentChanged.connect(lambda _i: self.refresh())
         self.updates = None  # UpdateController (ligado depois por set_updates)
+        self.update_banner = UpdateBanner(lambda: self.updates)
         self.update_bar = UpdateBar(lambda: self.updates)
+        self.update_bar.on_suggest = lambda: self.tray._suggest()
         central = QWidget()
         col = QVBoxLayout(central)
         col.setContentsMargins(0, 0, 0, 0)
+        col.addWidget(self.update_banner)
         col.addWidget(self.update_bar)
         col.addWidget(self.tabs, 1)
         self.setCentralWidget(central)
@@ -167,7 +203,9 @@ class MainWindow(QMainWindow):
     def set_updates(self, controller) -> None:
         self.updates = controller
         controller.listeners.append(self.update_bar.refresh)
+        controller.listeners.append(self.update_banner.refresh)
         self.update_bar.refresh()
+        self.update_banner.refresh()
 
     def show_welcome(self, tab: str = "news", entries=None, title: str = "", first_run: bool = False) -> None:
         """Janela com o Guia de uso e as Novidades (identidade do KerbHUD); `tab`: "guide" ou "news"."""
@@ -290,6 +328,7 @@ class MainWindow(QMainWindow):
 
         helpm = bar.addMenu(tr("Ajuda"))
         helpm.addAction(tr("Verificar atualizações..."), lambda: self.updates.check() if self.updates else None)
+        helpm.addAction(tr("Sugerir melhoria..."), t._suggest)
         helpm.addAction(tr("Abrir pasta de dados"), t._open_data)
         helpm.addAction(tr("Abrir arquivo de log (erros)"), t._open_log)
         helpm.addSeparator()
