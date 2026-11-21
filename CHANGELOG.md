@@ -1,3 +1,7 @@
+## 0.17.10 — Tamanho do cabeçalho e dos pilotos no Standings
+
+* **Standings — Tamanho do cabeçalho** (XS, S, M, L): muda a barra do topo (tempo, incidentes, volta, pilotos e os títulos das colunas). **Tamanho dos pilotos** (XS, S, M, L): muda as linhas dos pilotos e os cabeçalhos de classe. "S" é o tamanho de sempre.
+
 ## 0.17.9 — Escala pelo quadrado vermelho e novas opções do Standings
 
 * **Escala sem scroll:** a roda do mouse não muda mais o tamanho. No modo de edição, **arraste o quadrado vermelho** (borda ou canto) no Standings e no Inputs: o texto e a janela mudam juntos, mantendo a proporção, e o lado oposto fica parado. Arrastar não tira mais linhas nem colunas; para isso use as opções de Linhas. Ctrl + roda continua sendo a transparência.

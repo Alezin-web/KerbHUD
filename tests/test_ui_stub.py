@@ -1489,6 +1489,22 @@ class TestUiWithStub(unittest.TestCase):
         self.assertEqual(rel._geom()[2:], (400, 200))
         self.assertNotIn("scale", rel.options)
 
+    def test_standings_header_and_driver_size(self):
+        win = self.modules.create_module("standings")
+        win.snapshot = self.snap
+        win.options = {"scale": 0.0005}
+        w0, h0 = win.layout_size(2000, 2000)
+        win.options = {"scale": 0.0005, "driver_size": "L", "header_size": "L"}
+        w1, h1 = win.layout_size(2000, 2000)
+        self.assertGreater(w1, w0)  # linhas maiores alargam o painel
+        self.assertGreater(h1, h0)
+        p = MagicMock()
+        win.paint_content(p, 2000, 2000)
+        scales = [c[1] for c in p.mock_calls if c[0] == "scale"]
+        self.assertIn((1.3, 1.3), scales)  # linhas e barra do topo ampliadas
+        win.options = {"scale": 0.0005, "driver_size": "XS", "header_size": "XS"}
+        self.assertLess(win.layout_size(2000, 2000)[1], h0)
+
     def test_dragging_an_edge_scales_text_and_window_together(self):
         win = self.modules.create_module("standings")
         win.options = {"scale": 0.0005}

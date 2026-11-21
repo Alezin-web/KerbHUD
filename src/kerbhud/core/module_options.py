@@ -11,7 +11,7 @@ from typing import Any, Callable, Optional
 from .fuel import RESERVE_CHOICES, get_reserve
 from .radar import RANGE_CHOICES, get_range
 from .relative import AHEAD_CHOICES, FIGHT_CHOICES, get_relative_options
-from .standings import COLUMN_KEYS, AROUND_ROW_RANGE, COLUMN_LABELS, OTHER_RANGE, TOP_ROW_RANGE, get_standings_options
+from .standings import COLUMN_KEYS, AROUND_ROW_RANGE, COLUMN_LABELS, OTHER_RANGE, SIZE_CHOICES, TOP_ROW_RANGE, get_standings_options
 from .tireview import PRESSURE_UNITS, get_pressure_unit
 from .viewmodel import (CHANNEL_LABELS, CHANNELS, HISTORY_CHOICES, TRACE_CHOICES, get_channels, get_history_s,
                         get_trace_s)
@@ -54,6 +54,10 @@ SPECS: dict[str, tuple[Opt, ...]] = {
             lambda o: get_standings_options(o).other_top, OTHER_RANGE, cast=int),
         Opt("other_around", "Outras classes: carros perto de mim", "int", lambda o: get_standings_options(o).other_around,
             OTHER_RANGE, cast=int),
+        Opt("header_size", "Tamanho do cabeçalho (barra do topo)", "choice", lambda o: get_standings_options(o).header_size,
+            tuple((s, s) for s in SIZE_CHOICES)),
+        Opt("driver_size", "Tamanho dos pilotos (linhas)", "choice", lambda o: get_standings_options(o).driver_size,
+            tuple((s, s) for s in SIZE_CHOICES)),
         Opt("font", "Fonte", "font", lambda o: get_standings_options(o).font),
         Opt("animations", "Animações de ultrapassagem", "bool", lambda o: get_standings_options(o).animations),
         Opt("show_profile", "Meu perfil no rodapé", "bool", lambda o: get_standings_options(o).show_profile),

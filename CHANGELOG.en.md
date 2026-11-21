@@ -1,3 +1,7 @@
+## 0.17.10 — Header and driver size in Standings
+
+* **Standings — Header size** (XS, S, M, L): changes the top bar (time, incidents, lap, drivers and the column titles). **Driver size** (XS, S, M, L): changes the driver rows and the class headers. "S" is the usual size.
+
 ## 0.17.9 — Scale by the red square and new Standings options
 
 * **Scale without scrolling:** the mouse wheel no longer resizes anything. In edit mode, **drag the red square** (edge or corner) on Standings and Inputs: text and window change together, keeping the proportion, and the opposite side stays put. Dragging no longer removes rows or columns; use the Rows options for that. Ctrl + wheel is still transparency.

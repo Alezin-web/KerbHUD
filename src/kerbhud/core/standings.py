@@ -37,6 +37,8 @@ COLUMN_LABELS = {"flag": "Bandeira (país)", "license": "Licença / iRating", "b
 DEFAULT_COLUMNS = frozenset(COLUMN_KEYS)
 SCOPES = ("all", "class")
 DEFAULT_TOP_ROWS, DEFAULT_AROUND_ROWS, DEFAULT_OTHER_TOP, DEFAULT_OTHER_AROUND = 3, 7, 1, 1
+SIZE_CHOICES = ("XS", "S", "M", "L")
+SIZE_FACTORS = {"XS": 0.8, "S": 1.0, "M": 1.15, "L": 1.3}  # S = o tamanho de sempre
 MAX_COUNT = 40  # a pessoa digita o número que quiser, até aqui (a altura da janela ainda é o teto)
 TOP_ROW_RANGE, AROUND_ROW_RANGE, OTHER_RANGE = (0, MAX_COUNT), (1, MAX_COUNT), (0, MAX_COUNT)
 
@@ -80,6 +82,24 @@ class StandingsOptions:
     other_top: int = DEFAULT_OTHER_TOP  # OUTRAS classes: carros do topo de cada uma (0 e 0 = nenhuma outra classe)
     other_around: int = DEFAULT_OTHER_AROUND  # OUTRAS classes: carros mais perto de mim na classificação geral
     font: str = ""  # "" = fonte padrão do KerbHUD; senão o nome de uma fonte instalada
+    header_size: str = "S"  # barra do topo (tempo, incidentes, volta, títulos das colunas): XS, S, M, L
+    driver_size: str = "S"  # linhas dos pilotos (e cabeçalhos de classe)
+
+    @property
+    def header_factor(self) -> float:
+        return SIZE_FACTORS.get(self.header_size, 1.0)
+
+    @property
+    def driver_factor(self) -> float:
+        return SIZE_FACTORS.get(self.driver_size, 1.0)
+
+    @property
+    def top_h(self) -> float:
+        return TOP_H * self.header_factor
+
+    @property
+    def row_h(self) -> float:
+        return ROW_H * self.driver_factor
 
 
 def get_standings_options(options: dict) -> StandingsOptions:
@@ -101,7 +121,9 @@ def get_standings_options(options: dict) -> StandingsOptions:
                             count("around_rows", DEFAULT_AROUND_ROWS, *AROUND_ROW_RANGE),
                             count("other_top", DEFAULT_OTHER_TOP, *OTHER_RANGE),
                             count("other_around", DEFAULT_OTHER_AROUND, *OTHER_RANGE),
-                            font.strip()[:80] if isinstance(font, str) else "")
+                            font.strip()[:80] if isinstance(font, str) else "",
+                            o.get("header_size") if o.get("header_size") in SIZE_CHOICES else "S",
+                            o.get("driver_size") if o.get("driver_size") in SIZE_CHOICES else "S")
 
 
 @dataclass(frozen=True)
@@ -131,11 +153,11 @@ def column_layout(opts: StandingsOptions) -> list[ColumnSpec]:
 def standings_design_size(options: dict) -> tuple[float, float]:
     opts = get_standings_options(options)
     cols = column_layout(opts)
-    width = cols[-1].x + cols[-1].w + PAD
+    width = (cols[-1].x + cols[-1].w + PAD) * opts.driver_factor
     # tamanho "natural": minha classe (cabeçalho + topo + corte + em volta) e, de exemplo, 2 outras classes
     other = (1 + opts.other_top + opts.other_around) if (opts.other_top + opts.other_around) else 0
     rows = min(1 + opts.top_rows + (1 if opts.top_rows else 0) + opts.around_rows + 2 * other, MAX_AUTO_ROWS)
-    height = TOP_H + rows * ROW_H + (FOOTER_H if opts.show_profile else 0.0) + PAD_BOTTOM
+    height = opts.top_h + rows * opts.row_h + (FOOTER_H if opts.show_profile else 0.0) + PAD_BOTTOM
     return width, height
 
 
@@ -161,7 +183,7 @@ def fit_columns(opts: StandingsOptions, avail_w: float) -> list[ColumnSpec]:
 def fit_rows(opts: StandingsOptions, avail_h: float) -> int:
     """Quantas linhas (cabeçalhos de classe incluídos) cabem na altura disponível; o teto é MAX_AUTO_ROWS."""
     footer = FOOTER_H if opts.show_profile else 0.0
-    fit = int((avail_h - TOP_H - footer - PAD_BOTTOM) // ROW_H)
+    fit = int((avail_h - opts.top_h - footer - PAD_BOTTOM) // opts.row_h)
     cap = MAX_AUTO_ROWS  # o teto de linhas agora vem de Rows/Multiclass (topo + em volta), não de um número fixo
     return max(MIN_ROWS, min(cap, fit))
 

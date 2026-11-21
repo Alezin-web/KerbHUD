@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kerbhud"
-version = "0.17.9"
+version = "0.17.10"
 description = "Overlay de Sim Racing para iRacing e Le Mans Ultimate (Etapa 1: camada de dados)"
 requires-python = ">=3.10"
 dependencies = ["PySide6>=6.6"]

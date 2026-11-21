@@ -77,7 +77,8 @@ class StandingsModule(ModuleWindow):
         key = (round(aw, 1), round(ah, 1), opts)
         if self._prep is not None and self._prep_snap is snap and self._prep_key == key:
             return self._prep
-        cols = fit_columns(opts, aw)  # colunas que cabem SEM encolher a fonte
+        df, hf = opts.driver_factor, opts.header_factor
+        cols = fit_columns(opts, aw / df)  # colunas que cabem SEM encolher a fonte (em unidades já sem o tamanho dos pilotos)
         if snap is None or not snap.connected:
             self._grid.reset()
             self._anim.reset()
@@ -93,10 +94,10 @@ class StandingsModule(ModuleWindow):
                 prep = _Prep(opts, cols, view, message=tr("AGUARDANDO CLASSIFICAÇÃO"))
             else:
                 if not self._nrg.visible(snap):  # nenhuma categoria da sessão tem NRG: a coluna some
-                    cols = fit_columns(replace(opts, columns=opts.columns - {"nrg"}), aw)
+                    cols = fit_columns(replace(opts, columns=opts.columns - {"nrg"}), aw / df)
                 lines = select_lines_by_counts(view.groups, fit_rows(opts, ah), opts)  # linhas que cabem na altura
-                used_h = TOP_H + len(lines) * ROW_H + (FOOTER_H if opts.show_profile else 0.0) + PAD_BOTTOM
-                prep = _Prep(opts, cols, view, lines, columns_width(cols), used_h)
+                used_h = opts.top_h + len(lines) * opts.row_h + (FOOTER_H if opts.show_profile else 0.0) + PAD_BOTTOM
+                prep = _Prep(opts, cols, view, lines, columns_width(cols) * df, used_h)
         self._prep, self._prep_snap, self._prep_key = prep, snap, key
         return prep
 
@@ -133,10 +134,11 @@ class StandingsModule(ModuleWindow):
             self.is_animating = False
             p.setPen(QColor(theme.GRAY))
             p.setFont(make_font(20, True))
-            p.drawText(QRectF(0, TOP_H, w, prep.used_h - TOP_H), Qt.AlignCenter, prep.message)
+            p.drawText(QRectF(0, prep.opts.top_h, w, prep.used_h - prep.opts.top_h), Qt.AlignCenter, prep.message)
             return
         view, opts, cols = prep.view, prep.opts, prep.cols
-        self._top_bar(p, w, view, cols)
+        df, hf = opts.driver_factor, opts.header_factor
+        self._top_bar(p, w, view, cols, hf, df)
 
         lines = prep.lines
         now = self._clock()
@@ -149,16 +151,20 @@ class StandingsModule(ModuleWindow):
             order.append((an.moving, k, line, an))
         order.sort(key=lambda t: t[0])  # quem está se movendo é desenhado por último (fica por cima)
         for _moving, k, line, an in order:
-            y = TOP_H + (k + an.dy_rows) * ROW_H
+            y = opts.top_h + (k + an.dy_rows) * opts.row_h
+            p.save()
+            p.translate(0, y)  # cada linha é desenhada no tamanho de sempre e ampliada/reduzida por "Tamanho dos pilotos"
+            p.scale(df, df)
             if isinstance(line, HeaderLine):
-                self._group_header(p, w, y, line, an)
+                self._group_header(p, w / df, 0.0, line, an)
             elif line is None:
-                self._separator(p, w, y)
+                self._separator(p, w / df, 0.0)
             else:
-                self._row(p, w, y, line, cols, k, an)
+                self._row(p, w / df, 0.0, line, cols, k, an)
+            p.restore()
         self.is_animating = self._anim.active(now) or self._fade_t0 is not None  # o fade também pede repintura
         if opts.show_profile:
-            self._footer(p, w, TOP_H + len(lines) * ROW_H, view)
+            self._footer(p, w, opts.top_h + len(lines) * opts.row_h, view)
 
     @staticmethod
     def _keys(lines: list) -> list[tuple]:
@@ -184,8 +190,11 @@ class StandingsModule(ModuleWindow):
         p.drawText(QRectF(x, 1, tw + 4, 24), Qt.AlignLeft | Qt.AlignVCenter, text)
         return x + tw
 
-    def _top_bar(self, p: QPainter, w: float, view: StandingsView, cols: list[ColumnSpec]) -> None:
+    def _top_bar(self, p: QPainter, w: float, view: StandingsView, cols: list[ColumnSpec], hf: float = 1.0,
+                 df: float = 1.0) -> None:
         bar = view.bar
+        p.save()
+        p.scale(hf, hf)  # "Tamanho do cabeçalho": tempo, incidentes, volta e pilotos
         icons.session_badge(p, 14 + INFO_BADGE_R, 13, INFO_BADGE_R, bar.letter)
         # os itens fluem da esquerda para a direita conforme a largura real de cada texto
         x = self._text(p, 14 + 2 * INFO_BADGE_R + 8, bar.time_text or bar.name, INFO_FONT_PX, theme.WHITE) + 24
@@ -199,15 +208,17 @@ class StandingsModule(ModuleWindow):
             x = self._text(p, x + lap_w + 4, bar.lap_text, INFO_FONT_PX, theme.WHITE) + 24
         icons.helmet(p, x, 2, INFO_HELMET_PX, theme.GRAY)  # pilotos na corrida
         self._text(p, x + INFO_HELMET_PX * 1.2 + 6, str(bar.cars_count), INFO_FONT_PX, theme.WHITE)
-        # títulos das colunas: maiores (17), encolhem só se a coluna for estreita demais (ex.: "Tire")
+        p.restore()
+        # títulos das colunas: maiores (17), encolhem só se a coluna for estreita demais (ex.: "Tire").
+        # Ficam sobre as colunas (que seguem o "Tamanho dos pilotos") e usam o tamanho do cabeçalho.
         p.setPen(QColor(theme.GRAY))
         for c in cols:
             title = _TITLES.get(c.key)
             if title:
                 shift = NRG_ICON_X if c.key == "nrg" else 0.0  # o título fica sobre a bateria
-                avail = c.w - 4 - shift
-                p.setFont(fit_font(p, title, TITLE_FONT_PX, avail, True, 12.0))
-                p.drawText(QRectF(c.x + shift, TITLE_ROW_Y, avail, TITLE_ROW_H), _ALIGN[c.align], title)
+                avail = (c.w - 4 - shift) * df
+                p.setFont(fit_font(p, title, TITLE_FONT_PX * hf, avail, True, 12.0 * hf))
+                p.drawText(QRectF((c.x + shift) * df, TITLE_ROW_Y * hf, avail, TITLE_ROW_H * hf), _ALIGN[c.align], title)
 
     # ---- linhas ---------------------------------------------------------- #
     def _group_header(self, p: QPainter, w: float, y: float, line: HeaderLine, an: RowAnim) -> None:

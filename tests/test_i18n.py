@@ -60,7 +60,7 @@ class TestI18n(unittest.TestCase):
                 need.update(l for _v, l in (o.choices if o.kind in ("choice", "multi") else ()))
         same_in_both = {"KerbHUD", "OK", "Layout", "Layout 1", "Layout 2", "Layout 3", "Layout 4", "RPM", "iRacing",
                         "Config", "Overlay", "Standings", "Relative", "Inputs", "Radar", "Track Map", "Widgets", "Layouts",
-                        "Le Mans Ultimate", "Idioma / Language", "Config: {}", "Combustível", "PSI", "kPa"}
+                        "XS", "S", "M", "L", "Le Mans Ultimate", "Idioma / Language", "Config: {}", "Combustível", "PSI", "kPa"}
         missing = sorted(k for k in need if k not in TRANSLATIONS and k not in same_in_both
                          and not re.fullmatch(r"[\d.]+( s| m)?", k))
         self.assertEqual(missing, [], "textos sem tradução em core/i18n_en.py")

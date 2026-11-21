@@ -49,6 +49,7 @@ CHECKS = {
     "escala_pelo_quadrado_vermelho": lambda: _corner_drag_scales_and_wheel_does_not(),
     "standings_linhas_topo_e_em_volta": lambda: _standings_top_and_around(),
     "standings_multiclasse_e_fonte": lambda: _standings_multiclass_and_font(),
+    "standings_tamanho_do_cabecalho_e_dos_pilotos": lambda: _standings_sizes(),
     "posicao_ao_vivo_na_corrida": lambda: _live_order_matches_positions(),
     "mapa_por_posicao_estimada_iracing": lambda: _estimated_map_ok(),
     "mapa_grava_mesmo_com_box_na_reta": lambda: _map_with_pit_on_the_straight(),
@@ -135,6 +136,16 @@ def _standings_top_and_around():
     me = at("corrida", 12).player()
     own = lambda opts: [r for r in _standings_lines(opts) if r.class_label and r.car.class_name == me.class_name]  # noqa: E731
     return any(r.is_player for r in own({})) and len(own({"top_rows": 1, "around_rows": 3})) < len(own({"top_rows": 5, "around_rows": 9}))
+
+
+def _standings_sizes():
+    """XS/S/M/L mudam a altura da barra do topo e a das linhas; "S" é o tamanho de sempre."""
+    from kerbhud.core.standings import FOOTER_H, PAD_BOTTOM, ROW_H, TOP_H, get_standings_options, standings_design_size
+    base = get_standings_options({})
+    big = get_standings_options({"header_size": "L", "driver_size": "L"})
+    small = get_standings_options({"header_size": "XS", "driver_size": "XS"})
+    return (base.top_h == TOP_H and base.row_h == ROW_H and big.top_h > TOP_H > small.top_h and big.row_h > ROW_H > small.row_h
+            and standings_design_size({"driver_size": "L"})[0] > standings_design_size({})[0])
 
 
 def _standings_multiclass_and_font():

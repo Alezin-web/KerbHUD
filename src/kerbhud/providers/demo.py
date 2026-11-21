@@ -231,6 +231,7 @@ DEMO_FEATURES: dict[str, str] = {
     "escala_pelo_quadrado_vermelho": "corrida",
     "standings_linhas_topo_e_em_volta": "corrida",
     "standings_multiclasse_e_fonte": "corrida",
+    "standings_tamanho_do_cabecalho_e_dos_pilotos": "corrida",
     "atalho_pula_para_a_proxima_etapa": "treino",
     "disputas_e_voltas_a_frente_atras": "corrida",
     "pits_e_abandono": "corrida",

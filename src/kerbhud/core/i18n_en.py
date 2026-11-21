@@ -67,7 +67,8 @@ TRANSLATIONS: dict[str, str] = {
     "Histórico: {} s": "History: {} s", "Gráfico: {} s": "Graph: {} s", "Reserva: {} volta(s)": "Reserve: {} lap(s)",
     "Alcance: {} m": "Range: {} m", "Pressão em {}": "Pressure in {}",
     "0 volta(s)": "0 lap(s)", "0.5 volta(s)": "0.5 lap(s)", "1 volta(s)": "1 lap(s)", "2 volta(s)": "2 lap(s)",
-    "Fonte": "Font", "Padrão": "Default", "Linhas do topo (minha classe)": "Top rows (my class)",
+    "Fonte": "Font", "Tamanho do cabeçalho (barra do topo)": "Header size (top bar)",
+    "Tamanho dos pilotos (linhas)": "Driver size (rows)", "Padrão": "Default", "Linhas do topo (minha classe)": "Top rows (my class)",
     "Linhas em volta de mim": "Rows around me", "Outras classes: carros do topo (0 e 0 = não mostrar)":
     "Other classes: top cars (0 and 0 = hide them)", "Outras classes: carros perto de mim": "Other classes: cars near me", "Config: {}": "Config: {}", "Aumentar o texto (+10%)": "Increase text (+10%)", "Diminuir o texto (-10%)": "Decrease text (-10%)",
     "Mostrar meu perfil no rodapé": "Show my profile in the footer", "Telemetria": "Telemetry", "Combustível": "Fuel",
