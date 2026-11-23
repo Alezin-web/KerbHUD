@@ -45,7 +45,7 @@ class TestLaunchers(unittest.TestCase):
         self.assertIn(str(Path(__import__("kerbhud").__file__).resolve().parent), text)  # pasta do código
         for label in ("Python", "PySide6", "configuração"):
             self.assertIn(label, text)
-        self.assertTrue(re.fullmatch(r"\d+\.\d+\.\d+", __version__))
+        self.assertTrue(re.fullmatch(r"\d+\.\d+\.\d+(\.\d+)?", __version__))
 
 
 if __name__ == "__main__":

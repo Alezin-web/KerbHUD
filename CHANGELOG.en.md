@@ -1,3 +1,11 @@
+## 0.17.14.1 — Patch: fixes
+
+**Fixes**
+* **Suggest an improvement:** the button (main window, Help menu and tray) opened the GitHub page instead of the KerbHUD form. It now opens the form, which sends without an account.
+
+**Under the hood**
+* New automated test that prevents repeated methods in the interface, which is what caused this bug.
+
 ## 0.17.14 — Suggestions without an account and blue flag in DigiFlag
 
 * **Suggest an improvement, no account:** the button now opens a KerbHUD window (idea, why, simulator and optional contact) and sends it to the creator over the internet. Before sending it shows what will be sent (only the text, the simulator, the KerbHUD version and the contact if you fill it in) and asks for your confirmation; nothing from your computer is sent. Limit of one suggestion per minute. With no internet you can copy the text or open it on GitHub (which needs an account).

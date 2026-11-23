@@ -609,26 +609,6 @@ class Tray:
         dlg.exec()
 
     @staticmethod
-    def _open_logos() -> None:
-        if winapi.IS_WIN:
-            import os
-            os.startfile(str(logos_dir()))  # noqa: S606
-
-    @staticmethod
-    def _open_data() -> None:
-        if winapi.IS_WIN:
-            import os
-            os.startfile(str(data_dir()))  # noqa: S606
-
-    def _suggest(self) -> None:
-        """Abre a página de nova issue do GitHub (no navegador) já com um modelo; o KerbHUD não envia nada sozinho."""
-        from PySide6.QtCore import QUrl
-        from PySide6.QtGui import QDesktopServices
-        from ..core.feedback import suggestion_url
-        from ..core.updater import effective_repo
-        QDesktopServices.openUrl(QUrl(suggestion_url(effective_repo(self.engine.settings), __version__, get_language())))
-
-    @staticmethod
     def _open_log() -> None:
         if winapi.IS_WIN:
             import os

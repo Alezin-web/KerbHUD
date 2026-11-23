@@ -1,3 +1,11 @@
+## 0.17.14.1 — Patch: correções
+
+**Correções**
+* **Sugerir melhoria:** o botão (janela principal, menu Ajuda e bandeja) abria a página do GitHub em vez do formulário do KerbHUD. Agora abre o formulário, que envia sem precisar de conta.
+
+**Por dentro**
+* Novo teste automático que impede métodos repetidos na interface, que foi o que causou esse erro.
+
 ## 0.17.14 — Sugestão sem conta e bandeira azul no DigiFlag
 
 * **Sugerir melhoria, sem conta:** o botão agora abre uma janela do próprio KerbHUD (ideia, por quê, simulador e contato opcional) e envia ao criador pela internet. Antes de enviar, ela mostra o que vai ser mandado (só o texto, o simulador, a versão do KerbHUD e o contato se você preencher) e pede sua confirmação; nada do seu computador é enviado. Há um limite de uma sugestão por minuto. Se não houver internet, dá para copiar o texto ou abrir no GitHub (aí precisa de conta).

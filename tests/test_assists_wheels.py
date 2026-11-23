@@ -76,3 +76,27 @@ class LmuInputsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoDuplicateMethodsTest(unittest.TestCase):
+    def test_ui_classes_have_no_duplicate_methods(self):
+        """Um método repetido na mesma classe esconde o primeiro (já fez o botão de sugestão abrir o GitHub)."""
+        import ast
+        from pathlib import Path
+        import kerbhud
+        for f in (Path(kerbhud.__file__).parent / "ui").glob("*.py"):
+            for cls in [n for n in ast.walk(ast.parse(f.read_text(encoding="utf-8"))) if isinstance(n, ast.ClassDef)]:
+                names = [n.name for n in cls.body if isinstance(n, ast.FunctionDef)]
+                dup = {n for n in names if names.count(n) > 1}
+                self.assertFalse(dup, f"{f.name}:{cls.name} repete {dup}")
+
+
+class PatchVersionTest(unittest.TestCase):
+    def test_four_part_patch_version_is_newer_and_has_notes(self):
+        from kerbhud import __version__
+        from kerbhud.core.updater import is_newer
+        from kerbhud.core.changelog import release_notes
+        self.assertTrue(is_newer("0.17.14.1", "0.17.14"))
+        self.assertFalse(is_newer("0.17.14", "0.17.14.1"))
+        self.assertTrue(is_newer("0.17.15", "0.17.14.1"))
+        self.assertIn("Patch", release_notes(__version__, "Alezin-web/KerbHUD"))
