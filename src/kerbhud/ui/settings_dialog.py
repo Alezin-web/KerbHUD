@@ -295,6 +295,28 @@ class ModuleConfigDialog(QDialog):
                 cb = _combo([("", "Padrão")] + [(f, f) for f in QFontDatabase.families()], cur)
                 cb.currentIndexChanged.connect(lambda _i, c=cb, k=o.key: manager.set_option(mid, k, c.currentData() or ""))
                 form.addRow(tr(o.label), cb)
+            elif o.kind == "file":  # arquivo escolhido pela pessoa (ex.: imagem do volante)
+                box = QHBoxLayout()
+                edit = QLineEdit(str(cur or ""))
+                edit.setReadOnly(True)
+                pick = QPushButton(tr("Escolher..."))
+                clear = QPushButton(tr("Limpar"))
+
+                def _set(path, e=edit, k=o.key):
+                    e.setText(path)
+                    manager.set_option(mid, k, path)
+
+                def _pick(_c=False, e=edit):
+                    path, _f = QFileDialog.getOpenFileName(self, tr("Escolher imagem"), "",
+                                                           tr("Imagens (*.png *.jpg *.jpeg *.webp *.bmp)"))
+                    if path:
+                        _set(path)
+                pick.clicked.connect(_pick)
+                clear.clicked.connect(lambda _c=False: _set(""))
+                box.addWidget(edit, 1)
+                box.addWidget(pick)
+                box.addWidget(clear)
+                form.addRow(tr(o.label), box)
             elif o.kind == "bool":
                 w = QCheckBox(tr(o.label))
                 w.setChecked(bool(cur))

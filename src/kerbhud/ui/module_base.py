@@ -10,6 +10,7 @@ módulo nunca deforma o desenho.
 """
 from __future__ import annotations
 
+import time
 from typing import Optional
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
@@ -33,6 +34,7 @@ _CURSORS = {
 _FONT_CACHE: dict = {}
 _FIT_CACHE: dict = {}
 _CACHE_LIMIT = 4000
+VIS_FADE_S = 0.30  # duração do fade ao aparecer/sumir
 
 
 def clear_font_caches() -> None:
@@ -120,6 +122,9 @@ class ModuleWindow(QWidget):
         self._always_on_top = True
         self._ref_width = 1920.0  # largura (px) do monitor de referência da escala de texto
         self._fade = 1.0  # fator de aparecimento (fade-in) do quadro atual
+        self._vf = 1.0  # fade de aparecer/sumir (modo "só na pista" etc.): 0 = invisível, 1 = inteiro
+        self._vf_target = 1.0
+        self._vf_t = 0.0
         self._opacity = 1.0
         self._drag_mode: Optional[str] = None
         self._drag_origin = None
@@ -136,6 +141,48 @@ class ModuleWindow(QWidget):
         self.snapshot = snap
         if self.isVisible():
             self.update()
+
+    # ---- fade de aparecer / sumir ----------------------------------------- #
+    def begin_fade_in(self) -> None:
+        """Chamar ao mostrar uma janela que estava escondida: começa transparente e aparece aos poucos."""
+        self._vf, self._vf_target, self._vf_t = 0.0, 1.0, time.monotonic()
+
+    def fade_show(self) -> None:
+        """Voltar a aparecer no meio de um fade-out: continua de onde estava."""
+        if self._vf_target != 1.0:
+            self._vf_target, self._vf_t = 1.0, time.monotonic()
+            self.update()
+
+    def fade_hide(self) -> None:
+        """Some com fade-out; a janela só é escondida de verdade quando o fade termina."""
+        if self._vf_target == 0.0:
+            return
+        self._vf_target = 0.0
+        self._vf_t = time.monotonic()
+        self.update()
+
+    @property
+    def fading(self) -> bool:
+        return self._vf != self._vf_target
+
+    @property
+    def faded_out(self) -> bool:
+        return self._vf_target == 0.0 and self._vf <= 0.0
+
+    @property
+    def fading_out(self) -> bool:
+        return self._vf_target == 0.0
+
+    def _step_vis(self) -> float:
+        now = time.monotonic()
+        dt = max(0.0, min(now - self._vf_t, 0.25))
+        self._vf_t = now
+        step = dt / VIS_FADE_S
+        if self._vf < self._vf_target:
+            self._vf = min(self._vf_target, self._vf + step)
+        elif self._vf > self._vf_target:
+            self._vf = max(self._vf_target, self._vf - step)
+        return self._vf
 
     def set_opacity(self, value: float) -> None:
         self._opacity = min(max(value, 0.1), 1.0)
@@ -236,7 +283,7 @@ class ModuleWindow(QWidget):
         p.setRenderHint(QPainter.TextAntialiasing, True)
         p.setRenderHint(QPainter.SmoothPixmapTransform, True)  # logos reduzidas com suavização
         w, h = self.width(), self.height()
-        self._fade = self.frame_alpha(w, h)
+        self._fade = self.frame_alpha(w, h) * self._step_vis()
         p.setOpacity(self.effective_opacity)
         if self.FIXED_SCALE:
             self._paint_fixed(p, w, h)

@@ -230,6 +230,11 @@ DEMO_FEATURES: dict[str, str] = {
     "fabricante_pela_equipe_no_lmu": "lmu",
     "tempo_da_sessao_com_segundos": "corrida",
     "sugestao_de_melhoria_e_aviso_de_atualizacao": "corrida",
+    "digflag_azul_antes_da_amarela": "corrida",
+    "digflag_uma_bandeira_por_vez": "corrida",
+    "abs_tc_dourado_e_travamento_no_inputs": "corrida",
+    "volante_do_inputs_escolhivel": "corrida",
+    "fade_ao_aparecer_e_sumir": "corrida",
     "pneus_com_temperatura_em_destaque": "corrida",
     "escala_pelo_quadrado_vermelho": "corrida",
     "standings_linhas_topo_e_em_volta": "corrida",
@@ -639,4 +644,6 @@ class DemoProvider(Provider):
             throttle=throttle, brake=brake, clutch=_clamp(1.0 - (speed % 11) / 0.8), steering=steer,
             steering_deg=steer * 270.0, gear=gear, rpm=rpm, rpm_max=rpm_max, speed_ms=speed,
             shift_pct=_clamp((rpm - 7200) / 900), shift_source="derived",
+            abs_active=brake > 0.55, tc_active=throttle > 0.75 and phase < 0.34,  # só no DEMO: aparece o aviso dourado
+            lockup=brake > 0.93,
         )

@@ -13,7 +13,7 @@ class TestModuleOptions(unittest.TestCase):
                     self.assertIn(cur, [v for v, _l in o.choices], f"{mid}.{o.key}: {cur!r}")
                 elif o.kind == "int":
                     self.assertTrue(o.choices[0] <= cur <= o.choices[1], f"{mid}.{o.key}")
-                elif o.kind == "font":
+                elif o.kind in ("font", "file"):
                     self.assertIsInstance(cur, str)
                 elif o.kind == "multi":
                     self.assertTrue(set(cur) <= {k for k, _l in o.choices}, f"{mid}.{o.key}")

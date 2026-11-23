@@ -94,6 +94,9 @@ class Inputs:
     speed_ms: float = 0.0
     shift_pct: Optional[float] = None  # 0..1, 1 = hora de trocar
     shift_source: Optional[str] = None  # "sim" | "derived"
+    abs_active: Optional[bool] = None  # ABS atuando agora (None = o simulador não informa)
+    tc_active: Optional[bool] = None  # controle de tração atuando agora (None = não informa)
+    lockup: Optional[bool] = None  # roda travando (derivado no LMU; None = não dá para saber)
 
     @property
     def speed_kmh(self) -> float:
@@ -184,7 +187,7 @@ class TireSet:
 
 
 #: bandeiras que o overlay sabe mostrar, da MAIS para a MENOS importante
-FLAG_PRIORITY = ("red", "black", "disqualify", "repair", "yellow", "caution", "blue", "debris", "white",
+FLAG_PRIORITY = ("red", "black", "disqualify", "repair", "blue", "yellow", "caution", "debris", "white",
                  "checkered", "green")
 
 

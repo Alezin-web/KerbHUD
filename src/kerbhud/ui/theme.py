@@ -10,6 +10,7 @@ GRAY = "#8b8b95"
 GREEN = "#14c05a"
 YELLOW = "#f5c400"
 BLUE = "#2f6bff"
+GOLD = "#f2b01e"  # ABS/TC atuando
 PURPLE = "#b06bff"
 
 # Bahnschrift (Windows 10+) tem visual de painel de corrida; os demais são fallback.

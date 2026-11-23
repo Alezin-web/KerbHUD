@@ -1,3 +1,12 @@
+## 0.17.14 — Sugestão sem conta e bandeira azul no DigiFlag
+
+* **Sugerir melhoria, sem conta:** o botão agora abre uma janela do próprio KerbHUD (ideia, por quê, simulador e contato opcional) e envia ao criador pela internet. Antes de enviar, ela mostra o que vai ser mandado (só o texto, o simulador, a versão do KerbHUD e o contato se você preencher) e pede sua confirmação; nada do seu computador é enviado. Há um limite de uma sugestão por minuto. Se não houver internet, dá para copiar o texto ou abrir no GitHub (aí precisa de conta).
+* **Inputs — ABS/TC:** quando o **ABS** atua, o painel pisca em **dourado** (moldura e fundo suave), a **barra e a linha do freio** ficam douradas; quando o **TC** atua, o mesmo acontece com a barra e a linha do acelerador. Na **Telemetria** a linha do freio (ABS) e a do acelerador (TC) também ficam douradas nos trechos em que atuaram. Dá para ligar/desligar em Config (ligado por padrão). O iRacing só informa o ABS; o TC vem do LMU.
+* **Inputs — roda travando:** um **ponto azul** aparece fora das linhas (faixa no topo do gráfico e no alto da barra do freio) quando uma roda trava. Só no LMU: é **calculado** a partir do deslizamento do pneu (limiares *a confirmar no jogo*); o iRacing não informa isso. Opção para desligar em Config.
+* **Inputs — volante:** nova opção "Volante": **Clássico, GT, Fórmula**, **Minha imagem** (PNG, JPG, WEBP ou BMP que você escolher) ou **Sem volante**. O KerbHUD não traz imagens de volantes de marcas; use a sua.
+* **Fade ao aparecer e sumir:** em "Só na pista"/"Só na garagem" (e ao ligar/desligar módulos) os módulos agora aparecem e somem suavemente, em vez de pular.
+* **DigiFlag:** mostra **só uma bandeira por vez**, sem pontinhos das outras. A azul tem prioridade sobre a amarela: com as duas ativas, o painel fica todo azul. (Antes aparecia a amarela com um ponto azul.)
+
 ## 0.17.13 — Sugestões de melhoria e aviso de atualização
 
 * **Sugerir melhoria:** novo botão na janela principal e itens nos menus Ajuda e da bandeja. Abre a página de nova sugestão do projeto no GitHub, já com um modelo de texto (com a versão do KerbHUD); você escreve e envia pela sua conta do GitHub. O KerbHUD não envia nada sozinho.

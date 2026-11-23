@@ -541,4 +541,5 @@ class IRacingProvider(Provider):
             clutch=max(0.0, min(1.0, clu)), steering=steer, steering_deg=steer_deg,
             gear=int(g("Gear", 0)), rpm=float(rpm), rpm_max=rpm_max,
             speed_ms=float(g("Speed", 0.0)), shift_pct=shift, shift_source=src,
+            abs_active=bool(g("BrakeABSactive", False)) if "BrakeABSactive" in self._vars else None,  # o TC o iRacing não informa
         )

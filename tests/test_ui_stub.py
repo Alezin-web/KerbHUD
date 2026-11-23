@@ -90,6 +90,7 @@ def _install_stub():
 
     core = types.ModuleType("PySide6.QtCore")
     core.Qt, core.Signal, core.QObject, core.QTimer = _Qt(), Signal, QObject, QTimer
+    core.QUrl = MagicMock()
     core.QAbstractNativeEventFilter = QAbstractNativeEventFilter
     core.QPointF, core.QRectF = QPointF, QRectF
     class QPainter:
@@ -103,7 +104,7 @@ def _install_stub():
 
     gui = types.ModuleType("PySide6.QtGui")
     gui.QPainter = QPainter
-    for n in ("QColor", "QFont", "QPen", "QPainterPath", "QBrush", "QLinearGradient", "QRadialGradient", "QGuiApplication", "QAction", "QActionGroup", "QIcon", "QPixmap", "QKeySequence", "QFontDatabase"):
+    for n in ("QColor", "QFont", "QPen", "QPainterPath", "QBrush", "QLinearGradient", "QRadialGradient", "QGuiApplication", "QAction", "QActionGroup", "QIcon", "QPixmap", "QKeySequence", "QFontDatabase", "QDesktopServices"):
         setattr(gui, n, MagicMock())
     wid = types.ModuleType("PySide6.QtWidgets")
     wid.QWidget = QWidget
@@ -111,7 +112,7 @@ def _install_stub():
     def _mw(self): return MagicMock()
     wid.QMainWindow = type('QMainWindow', (QWidget,), {'menuBar': _mw, 'statusBar': _mw, 'setCentralWidget': lambda self, w: None,
                                                        'setWindowTitle': lambda self, t: None, 'hide': lambda self: setattr(self, '_vis', False)})
-    for n in ("QApplication", "QInputDialog", "QMenu", "QMessageBox", "QSystemTrayIcon", "QFileDialog", "QCheckBox", "QComboBox", "QDialogButtonBox", "QFormLayout", "QHBoxLayout", "QKeySequenceEdit", "QLabel", "QLineEdit", "QListWidget", "QPushButton", "QSpinBox", "QTabWidget", "QToolButton", "QVBoxLayout", "QScrollArea", "QSystemTrayIcon", "QTextBrowser"):
+    for n in ("QApplication", "QInputDialog", "QMenu", "QMessageBox", "QSystemTrayIcon", "QFileDialog", "QCheckBox", "QComboBox", "QDialogButtonBox", "QFormLayout", "QHBoxLayout", "QKeySequenceEdit", "QLabel", "QLineEdit", "QListWidget", "QPushButton", "QPlainTextEdit", "QSpinBox", "QTabWidget", "QToolButton", "QVBoxLayout", "QScrollArea", "QSystemTrayIcon", "QTextBrowser"):
         setattr(wid, n, MagicMock())
     wid.QComboBox = lambda *a, **k: MagicMock(findData=MagicMock(return_value=0))  # findData precisa devolver int
     pkg = types.ModuleType("PySide6")
@@ -354,6 +355,9 @@ class TestUiWithStub(unittest.TestCase):
             # troca por atalho (índice) e visibilidade muda
             mgr.switch_layout_by_index(3)
             self.assertEqual(mgr.layout.name, "Broadcast")
+            self.assertTrue(mgr.windows["inputs"].fading_out)  # some com fade-out, não de repente
+            mgr.windows["inputs"]._vf = 0.0  # fade terminou
+            mgr._on_tick()
             self.assertFalse(mgr.windows["inputs"].isVisible())
             self.assertTrue(mgr.windows["standings"].isVisible())
             # edição: mover módulo e persistir
@@ -372,9 +376,16 @@ class TestUiWithStub(unittest.TestCase):
             mgr.delete_layout("Meu Layout")
             self.assertNotIn("Meu Layout", store.list_names())
             # ocultar módulo individualmente e esconder tudo
+            def finish_fades():  # o fade-out de 0,3 s termina e a janela é escondida de verdade
+                for w in mgr.windows.values():
+                    if w.fading_out:
+                        w._vf = 0.0
+                mgr._on_tick()
             mgr.set_module_visible("standings", False)
+            finish_fades()
             self.assertFalse(mgr.windows["standings"].isVisible())
             mgr.toggle_overlay()
+            finish_fades()
             self.assertFalse(any(w.isVisible() for w in mgr.windows.values()))
             mgr.set_edit_mode(True)  # edição reexibe o overlay
             self.assertTrue(mgr.windows["status"].isVisible())
@@ -515,6 +526,41 @@ class TestUiWithStub(unittest.TestCase):
         p = MagicMock(); win.paint_content(p, 620, 112)
         self.assertEqual(p.drawPath.call_count, 0)
 
+    def test_inputs_abs_tc_gold_lockup_dot_and_wheel_styles(self):
+        from kerbhud.core.history import TelemetryHistory
+        from kerbhud.core.model import Inputs, Sim, Snapshot
+        from kerbhud.ui import theme
+        from kerbhud.ui.context import ModuleContext
+        hist = TelemetryHistory()
+        calm = self._live_snapshot()
+        busy = Snapshot(sim=Sim.LMU, connected=True, inputs=Inputs(
+            throttle=0.2, brake=0.9, steering_deg=10.0, gear=3, rpm=6000.0, rpm_max=8000.0, speed_ms=40.0,
+            abs_active=True, tc_active=False, lockup=True))
+        for k in range(120):
+            hist.on_snapshot(busy if 40 <= k < 80 else calm, now=50.0 + k / 60)
+        win = self.modules.create_module("inputs", ModuleContext(history=hist))
+        win.snapshot = busy
+        p = MagicMock(); win.paint_content(p, 620, 112)
+        self.assertTrue(win.is_animating)  # o aviso pulsa
+        brushes = [str(c.args[0]) for c in p.setBrush.call_args_list if c.args]
+        self.assertTrue(any(theme.GOLD in b for b in brushes) or p.setPen.called)
+        self.assertGreater(p.drawPath.call_count, 3)  # trecho dourado do freio por cima da linha
+        # desligado em Config: nada de dourado nem de pulsar
+        win.options = {"abs_tc_alert": False, "lock_alert": False}
+        p = MagicMock(); win.paint_content(p, 620, 112)
+        self.assertFalse(win.is_animating)
+        self.assertEqual(p.drawPath.call_count, 3)
+        # sem a informação do simulador (iRacing não dá TC; ABS ausente): nada aparece
+        win.options = {}
+        win.snapshot = calm
+        p = MagicMock(); win.paint_content(p, 620, 112)
+        self.assertFalse(win.is_animating)
+        # todos os estilos de volante desenham sem erro; "sem volante" não desenha o aro
+        for style in ("classic", "gt", "formula", "custom", "hidden"):
+            win.options = {"wheel_style": style, "wheel_image": "/nao/existe.png"}
+            p = MagicMock(); win.paint_content(p, 620, 112)
+            self.assertIn("R 135°", self._texts(p), style)
+
     def test_telemetry_draws_one_curve_per_enabled_channel(self):
         from kerbhud.core.history import TelemetryHistory
         from kerbhud.ui.context import ModuleContext
@@ -606,6 +652,7 @@ class TestUiWithStub(unittest.TestCase):
             self.assertTrue(hasattr(sd, "SettingsDialog") and hasattr(sd, "ModuleConfigDialog"))
             import kerbhud.ui.update_ui as uu
             self.assertTrue(hasattr(uu, "UpdateController"))
+            self._check_suggestion_dialog()
             dlg = sd.ModuleConfigDialog(mgr, "radar")  # monta a partir de core/module_options
             mgr.set_option("radar", "range_m", 40.0)
             self.assertEqual(mgr.layout.modules["radar"].options["range_m"], 40.0)
@@ -1038,6 +1085,7 @@ class TestUiWithStub(unittest.TestCase):
             mgr.load_active()
             mgr._on_tick()  # entrega o snapshot
             for w in mgr.windows.values():
+                w._vf = 1.0  # fade-in de entrada já terminou
                 w.update = MagicMock()
             mgr.windows["standings"].is_animating = True
             mgr._on_tick()  # mesmo snapshot (jogo pausado): só quem anima é redesenhado
@@ -1511,6 +1559,49 @@ class TestUiWithStub(unittest.TestCase):
         self.assertLess(first_scale["L/XS"], 1.3)
         self.assertLess(first_scale["L/XS"], first_scale["normal"])
         self.assertGreaterEqual(first_scale["L/XS"], 0.6)
+
+    def _check_suggestion_dialog(self):
+        """Janela de sugestões: só envia com ideia suficiente + consentimento; mostra erro sem travar; limita 1 por minuto."""
+        import threading
+        import kerbhud.ui.suggestion_dialog as sg
+        from kerbhud.core import feedback
+        sg._COOLDOWN = feedback.Cooldown(60)
+        sg.QTimer = MagicMock()  # o stub não tem singleShot; o teste chama _poll() à mão
+        dlg = sg.SuggestionDialog({})
+        text = {"idea": "Mostrar o clima da pista no overlay", "why": "", "simulator": "iRacing", "contact": ""}
+        dlg._data = lambda: dict(text, version="0.17.13")
+        sent = []
+        orig = feedback.submit
+        try:
+            feedback.submit = lambda data, version="", **k: sent.append(data)
+            dlg.consent.isChecked = lambda: False
+            dlg._refresh()
+            dlg.send.setEnabled.assert_called_with(False)  # sem consentimento, Enviar fica desligado
+            dlg.consent.isChecked = lambda: True
+            dlg._refresh()
+            dlg.send.setEnabled.assert_called_with(True)
+            dlg._send()
+            for t in threading.enumerate():
+                if t.name == "kerbhud-suggestion":
+                    t.join(2)
+            dlg._poll()
+            self.assertEqual(len(sent), 1)
+            self.assertEqual(sent[0]["idea"], "Mostrar o clima da pista no overlay")
+            self.assertEqual(sent[0]["version"], "0.17.13")
+            dlg._send()  # segunda tentativa logo em seguida: bloqueada pelo intervalo de 1 minuto
+            self.assertEqual(len(sent), 1)
+            # falha de rede: mostra a mensagem, não envia e não derruba
+            sg._COOLDOWN = feedback.Cooldown(60)
+            def boom(data, version="", **k): raise feedback.FeedbackError("Sem conexão")
+            feedback.submit = boom
+            dlg._send()
+            for t in threading.enumerate():
+                if t.name == "kerbhud-suggestion":
+                    t.join(2)
+            dlg._poll()
+            self.assertFalse(dlg._sending)
+        finally:
+            feedback.submit = orig
 
     def test_standings_header_and_driver_size(self):
         win = self.modules.create_module("standings")

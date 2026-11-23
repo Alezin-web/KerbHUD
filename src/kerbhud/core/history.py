@@ -27,6 +27,9 @@ class Sample:
     rpm_max: Optional[float]
     steering_deg: Optional[float]
     gear: int
+    abs_on: bool = False
+    tc_on: bool = False
+    lock: bool = False
 
 
 class TelemetryHistory:
@@ -47,7 +50,8 @@ class TelemetryHistory:
                 return
             t = time.monotonic() if now is None else now
             self._buf.append(Sample(t, i.throttle, i.brake, i.clutch, i.speed_ms, i.rpm,
-                                    i.steering, i.rpm_max, i.steering_deg, i.gear))
+                                    i.steering, i.rpm_max, i.steering_deg, i.gear,
+                                    i.abs_active is True, i.tc_active is True, i.lockup is True))
             cutoff = t - self.max_seconds
             while self._buf and self._buf[0].t < cutoff:
                 self._buf.popleft()

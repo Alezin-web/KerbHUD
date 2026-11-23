@@ -165,13 +165,16 @@ class OverlayManager(QObject):
             if want and not self.edit_mode:  # em edição tudo aparece, para poder posicionar
                 want = visibility.allowed(self.module_show_mode(mid), self._last_snap)
             if want and not w.isVisible():
+                w.begin_fade_in()
                 w.show()
                 w.apply_native_flags()
                 w.set_edit_mode(self.edit_mode)
                 if self._last_snap:
                     w.update_snapshot(self._last_snap)
+            elif want and w.fading_out:
+                w.fade_show()  # voltou a valer no meio do fade-out
             elif not want and w.isVisible():
-                w.hide()
+                w.fade_hide()  # some com fade-out; `_on_tick` esconde a janela quando termina
 
     def module_show_mode(self, mid: str) -> str:
         return visibility.effective_mode(self.settings.get("visibility"),
@@ -288,8 +291,10 @@ class OverlayManager(QObject):
                     w.update_snapshot(snap)
         # animações de ultrapassagem continuam mesmo sem snapshot novo (jogo pausado, por exemplo)
         for w in self.windows.values():
-            if w.is_animating and w.isVisible():
+            if w.isVisible() and (w.is_animating or w.fading):
                 w.update()
+            if w.fading_out and w.isVisible() and w.faded_out:
+                w.hide()  # fade-out terminou
 
     def zoom_module(self, mid: str, factor: float) -> None:
         """Aumenta/diminui o texto do módulo (a janela acompanha na mesma proporção) e salva no layout."""

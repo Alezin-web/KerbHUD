@@ -50,6 +50,12 @@ CHECKS = {
     "fabricante_pela_equipe_no_lmu": lambda: _lmu_team_brands(),
     "tempo_da_sessao_com_segundos": lambda: _session_time_has_seconds(),
     "sugestao_de_melhoria_e_aviso_de_atualizacao": lambda: _suggestion_and_update_notice(),
+    "digflag_uma_bandeira_por_vez": lambda: "others" not in _read_src("ui/digflag_module.py").split("def paint_content")[1],
+    "abs_tc_dourado_e_travamento_no_inputs": lambda: _assists_in_demo(),
+    "volante_do_inputs_escolhivel": lambda: "formula" in _read_src("core/wheels.py") and "wheel_style" in _read_src("core/module_options.py"),
+    "fade_ao_aparecer_e_sumir": lambda: "fade_hide" in _read_src("ui/overlay_manager.py") and "begin_fade_in" in _read_src("ui/overlay_manager.py"),
+    "digflag_azul_antes_da_amarela": lambda: __import__("kerbhud.core.model", fromlist=["x"]).FLAG_PRIORITY.index("blue")
+        < __import__("kerbhud.core.model", fromlist=["x"]).FLAG_PRIORITY.index("yellow"),
     "pneus_com_temperatura_em_destaque": lambda: all(c.temp_c is not None and all(t is not None for t in c.temps)
                                                        for c in tire_view(at("corrida", 12)).cells.values()),
     "escala_pelo_quadrado_vermelho": lambda: _corner_drag_scales_and_wheel_does_not(),
@@ -130,6 +136,24 @@ def _corner_drag_scales_and_wheel_does_not():
     return "_scale_by_drag" in src and "self.zoom(1.0 + 0.05 * steps)" not in src
 
 
+def _read_src(rel):
+    from pathlib import Path
+    import kerbhud
+    return (Path(kerbhud.__file__).parent / rel).read_text(encoding="utf-8")
+
+
+def _assists_in_demo():
+    """O DEMO mostra ABS, TC e travamento em algum ponto da volta."""
+    seen = set()
+    for k in range(0, 600):
+        i = at("corrida", k * 0.2).inputs
+        if i is not None:
+            for name in ("abs_active", "tc_active", "lockup"):
+                if getattr(i, name) is True:
+                    seen.add(name)
+    return seen == {"abs_active", "tc_active", "lockup"}
+
+
 def _standings_lines(options):
     from kerbhud.core.standings import StandingsRow, build_standings, get_standings_options, select_lines_by_counts
     opts = get_standings_options(options)
@@ -170,8 +194,11 @@ def _suggestion_and_update_notice():
     n = UpdateNotice()
     ok = n.banner_visible("9.9.9") and n.should_balloon("9.9.9") and not n.should_balloon("9.9.9")
     n.dismiss("9.9.9")
+    from kerbhud.core.feedback import FIELDS, build_submission, encode_form
+    sent = encode_form(build_submission("Ideia de teste para o overlay", "", "iRacing", "", "0.17.13")).decode()
     return ok and not n.banner_visible("9.9.9") and n.banner_visible("10.0.0") \
-        and suggestion_url("Alezin-web/KerbHUD", "0.17.13").startswith("https://github.com/Alezin-web/KerbHUD/issues/new?")
+        and suggestion_url("Alezin-web/KerbHUD", "0.17.13").startswith("https://github.com/Alezin-web/KerbHUD/issues/new?") \
+        and all(f"{FIELDS[k]}=" in sent for k in ("idea", "simulator", "version"))
 
 
 def _session_time_has_seconds():

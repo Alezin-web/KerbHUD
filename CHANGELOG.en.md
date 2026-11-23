@@ -1,3 +1,12 @@
+## 0.17.14 — Suggestions without an account and blue flag in DigiFlag
+
+* **Suggest an improvement, no account:** the button now opens a KerbHUD window (idea, why, simulator and optional contact) and sends it to the creator over the internet. Before sending it shows what will be sent (only the text, the simulator, the KerbHUD version and the contact if you fill it in) and asks for your confirmation; nothing from your computer is sent. Limit of one suggestion per minute. With no internet you can copy the text or open it on GitHub (which needs an account).
+* **Inputs — ABS/TC:** when **ABS** acts the panel pulses **gold** (border and soft tint), and the **brake bar and line** turn gold; when **TC** acts, the same happens to the throttle bar and line. In **Telemetry** the brake line (ABS) and throttle line (TC) also turn gold where they acted. Can be turned on/off in Config (on by default). iRacing only reports ABS; TC comes from LMU.
+* **Inputs — wheel lock-up:** a **blue dot** appears outside the lines (strip at the top of the graph and on top of the brake bar) when a wheel locks. LMU only: it is **calculated** from tyre slip (thresholds *to be confirmed in-game*); iRacing does not report this. Can be turned off in Config.
+* **Inputs — steering wheel:** new "Steering wheel" option: **Classic, GT, Formula**, **My image** (a PNG, JPG, WEBP or BMP you choose) or **No wheel**. KerbHUD ships no brand-name wheel images; use your own.
+* **Fade in and out:** with "On track only"/"In the garage only" (and when toggling modules) modules now fade in and out instead of popping.
+* **DigiFlag:** shows **only one flag at a time**, with no small dots for the others. Blue has priority over yellow: with both active the panel is fully blue. (Before, yellow showed with a blue dot.)
+
 ## 0.17.13 — Improvement suggestions and update notice
 
 * **Suggest an improvement:** new button in the main window and items in the Help and tray menus. It opens the project's new-suggestion page on GitHub, with a text template (including the KerbHUD version); you write and send it with your own GitHub account. KerbHUD sends nothing by itself.

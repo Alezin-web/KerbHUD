@@ -16,6 +16,7 @@ import re
 import time
 from typing import Optional
 
+from ..core.assists import lockup
 from ..core.sectorflags import SectorFlagWatch
 from ..core.heading import MotionHeading, OriCalibrator, TurnSense
 from ..core.memory import MappingBoundsError, MappingNotFound, MemoryView, Opener, open_named_mapping
@@ -461,6 +462,8 @@ class LmuProvider(Provider):
             speed_ms=speed,
             shift_pct=shift,
             shift_source="derived" if shift is not None else None,
+            abs_active=bool(t.mABSActive), tc_active=bool(t.mTCActive),
+            lockup=lockup(speed, float(t.mUnfilteredBrake), [float(w.mLongitudinalPatchVel) for w in t.mWheels]),
         )
 
     def _profile(self, caps: set) -> DriverProfile:

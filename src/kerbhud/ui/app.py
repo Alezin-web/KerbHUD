@@ -603,6 +603,24 @@ class Tray:
             os.startfile(str(data_dir()))  # noqa: S606
 
     def _suggest(self) -> None:
+        """Abre a janela de sugestões (formulário do próprio KerbHUD; o envio só acontece se a pessoa confirmar)."""
+        from .suggestion_dialog import SuggestionDialog
+        dlg = SuggestionDialog(self.engine.settings, getattr(self, "window", None))
+        dlg.exec()
+
+    @staticmethod
+    def _open_logos() -> None:
+        if winapi.IS_WIN:
+            import os
+            os.startfile(str(logos_dir()))  # noqa: S606
+
+    @staticmethod
+    def _open_data() -> None:
+        if winapi.IS_WIN:
+            import os
+            os.startfile(str(data_dir()))  # noqa: S606
+
+    def _suggest(self) -> None:
         """Abre a página de nova issue do GitHub (no navegador) já com um modelo; o KerbHUD não envia nada sozinho."""
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices

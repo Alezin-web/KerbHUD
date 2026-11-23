@@ -14,7 +14,7 @@ from ..core.viewmodel import (CHANNEL_SHORT, enabled_lanes, get_channels, get_hi
 from ..core.i18n import tr
 from . import theme
 from .module_base import ModuleWindow, make_font
-from .plotting import plot_series
+from .plotting import plot_flag_runs, plot_series
 
 COLORS = {"throttle": theme.GREEN, "brake": theme.RED, "clutch": theme.BLUE,
           "speed": theme.WHITE, "rpm": theme.YELLOW, "steering": theme.PURPLE}
@@ -71,6 +71,9 @@ class TelemetryModule(ModuleWindow):
                 vals, vmul, voff = cols[ch]
                 dts, dvs = decimate_columns(ts, vals, max(1, int(lw)))
                 plot_series(p, dts, dvs, vmul, voff, COLORS[ch], x, y, lw, lh, t0, seconds)
+                if self.options.get("abs_tc_alert", True) is not False and ch in ("brake", "throttle"):
+                    flag = (lambda s: s.abs_on) if ch == "brake" else (lambda s: s.tc_on)  # ABS no freio, TC no acelerador
+                    plot_flag_runs(p, samples, lambda s, c=ch: getattr(s, c), flag, theme.GOLD, x, y, lw, lh, t0, seconds)
             p.restore()
             self._lane_labels(p, lane_id, x, y, lh, scale, units)
         self._gutter(p, lanes, rects, samples[-1], units, plot_w)

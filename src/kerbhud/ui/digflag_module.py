@@ -5,9 +5,9 @@ from __future__ import annotations
 import time
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtGui import QColor, QPainter
 
-from ..core.digflag import (BLINK_FLAGS, DEBRIS_STRIPE, FLAG_CODE, FLAG_LED, FLAG_STYLE, THICK_BORDER_FLAGS, DigFlagTracker,
+from ..core.digflag import (BLINK_FLAGS, DEBRIS_STRIPE, FLAG_CODE, FLAG_LED, THICK_BORDER_FLAGS, DigFlagTracker,
                             led_pattern, debris_stripe)
 from .module_base import ModuleWindow
 
@@ -118,8 +118,3 @@ class DigFlagModule(ModuleWindow):
                 for cx, on in enumerate(row):
                     if on:
                         p.drawEllipse(QPointF(tx0 + (cx + 0.5) * cell, ty0 + (ry + 0.5) * cell), cell * 0.56, cell * 0.56)  # pontos grandes e sobrepostos = letra grossa
-        # outras bandeiras ativas: pontinhos coloridos no canto de baixo
-        for n, name in enumerate(v.others[:4]):
-            p.setBrush(QColor(FLAG_STYLE[name][1]))
-            p.setPen(QPen(QColor("#050506"), 1.0))
-            p.drawEllipse(QPointF(x0 + step * (3.2 + n * 1.4), y0 + side - step * 3.2), r * 1.2, r * 1.2)

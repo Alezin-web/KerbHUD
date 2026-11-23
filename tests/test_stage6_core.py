@@ -66,7 +66,7 @@ class TestDigFlag(unittest.TestCase):
         t = [0.0]
         tr = DigFlagTracker(clock=lambda: t[0])
         v = tr.update(snap([], flags=["green", "yellow", "blue"]))
-        self.assertEqual((v.primary, v.others), ("yellow", ["blue", "green"]))
+        self.assertEqual((v.primary, v.others), ("blue", ["yellow", "green"]))
         t[0] = 1.0
         self.assertEqual(tr.update(snap([], flags=["green"])).primary, "green")
         t[0] = 1.0 + GREEN_SHOW_S + 1

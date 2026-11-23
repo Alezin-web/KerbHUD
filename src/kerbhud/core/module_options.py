@@ -12,6 +12,7 @@ from .fuel import RESERVE_CHOICES, get_reserve
 from .radar import RANGE_CHOICES, get_range
 from .relative import AHEAD_CHOICES, FIGHT_CHOICES, get_relative_options
 from .standings import COLUMN_KEYS, AROUND_ROW_RANGE, COLUMN_LABELS, OTHER_RANGE, SIZE_CHOICES, TOP_ROW_RANGE, get_standings_options
+from .wheels import WHEEL_STYLES, get_wheel_image, get_wheel_style
 from .tireview import PRESSURE_UNITS, get_pressure_unit
 from .viewmodel import (CHANNEL_LABELS, CHANNELS, HISTORY_CHOICES, TRACE_CHOICES, get_channels, get_history_s,
                         get_trace_s)
@@ -21,7 +22,7 @@ from .viewmodel import (CHANNEL_LABELS, CHANNELS, HISTORY_CHOICES, TRACE_CHOICES
 class Opt:
     key: str
     label: str
-    kind: str  # "bool" | "choice" | "multi" | "int" (número digitado; choices = (mínimo, máximo)) | "font"
+    kind: str  # "bool" | "choice" | "file" (caminho de arquivo) | "multi" | "int" (número digitado; choices = (mínimo, máximo)) | "font"
     get: Callable[[dict], Any]  # (options do módulo) -> valor atual (bool / valor da escolha / conjunto de itens ligados)
     choices: tuple = ()  # kind="choice": ((valor, rótulo), ...)  |  kind="multi": ((item, rótulo), ...)
     apply: str = "option"  # "option" | "column" | "channel"
@@ -75,6 +76,7 @@ SPECS: dict[str, tuple[Opt, ...]] = {
         Opt("show_irating", "Mostrar iRating", "bool", lambda o: get_relative_options(o).show_irating),
     ),
     "telemetry": (
+        _bool("abs_tc_alert", "Mostrar ABS/TC atuando (dourado)", True),
         Opt("channels", "Canais", "multi", lambda o: {c for c, on in get_channels(o).items() if on},
             tuple((c, CHANNEL_LABELS[c]) for c in CHANNELS), apply="channel"),
         Opt("history_s", "Histórico", "choice", lambda o: _near(get_history_s(o), [(h, "") for h in HISTORY_CHOICES]),
@@ -83,6 +85,10 @@ SPECS: dict[str, tuple[Opt, ...]] = {
     "inputs": (
         _bool("show_clutch", "Mostrar embreagem", True),
         _bool("trace_steering", "Mostrar direção no gráfico", False),
+        _bool("abs_tc_alert", "Avisar quando o ABS/TC atuar (dourado)", True),
+        _bool("lock_alert", "Marcar roda travando (ponto azul)", True),
+        Opt("wheel_style", "Volante", "choice", lambda o: get_wheel_style(o), WHEEL_STYLES),
+        Opt("wheel_image", "Imagem do volante (arquivo PNG/JPG)", "file", lambda o: get_wheel_image(o)),
         Opt("trace_s", "Gráfico", "choice", lambda o: _near(get_trace_s(o), [(t, "") for t in TRACE_CHOICES]),
             tuple((t, f"{t} s") for t in TRACE_CHOICES), cast=float),
     ),
