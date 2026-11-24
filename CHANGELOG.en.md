@@ -1,3 +1,8 @@
+## 0.17.14.2 — Patch: tyre diagnostics for iRacing
+
+**Under the hood**
+* **Diagnostics (iRacing):** the output of `Diagnostico-iRacing.bat` now includes a `pneus_brutos` line with the raw tyre values iRacing sends (carcass and surface temperature, wear, pressure) and whether the car is on track or in the pits. It helps investigate why tyres do not show in some cases. Nothing changes in the overlay.
+
 ## 0.17.14.1 — Patch: fixes
 
 **Fixes**

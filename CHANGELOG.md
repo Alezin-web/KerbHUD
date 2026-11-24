@@ -1,3 +1,8 @@
+## 0.17.14.2 — Patch: diagnóstico dos pneus no iRacing
+
+**Por dentro**
+* **Diagnóstico (iRacing):** a saída do `Diagnostico-iRacing.bat` agora inclui a linha `pneus_brutos` com os valores crus dos pneus que o iRacing envia (temperatura da carcaça e da superfície, desgaste, pressão) e se o carro está na pista ou no pit. Serve para investigar por que os pneus não aparecem em alguns casos. Não muda nada no overlay.
+
 ## 0.17.14.1 — Patch: correções
 
 **Correções**

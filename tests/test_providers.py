@@ -493,6 +493,15 @@ class TestStage6Data(unittest.TestCase):
         self.assertAlmostEqual(lf.temp_c, 62.0)  # carcaça (60/62/64), não a superfície (80/83/86)
         self.assertEqual(lf.temps_c, (60.0, 62.0, 64.0))
 
+    def test_iracing_diagnostic_lists_raw_tyre_values(self):
+        p = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=ir_values())))
+        p.connect()
+        raw = p.poll().debug["pneus_brutos"]
+        self.assertIn("LF[", raw)
+        self.assertIn("tempL=80.00", raw)
+        self.assertIn("pressure=190.00", raw)
+        self.assertIn("IsOnTrack=", raw)
+
     def test_iracing_side_traffic_table_and_missing_vars(self):
         for raw, expected in ((0, None), (1, (0, 0)), (2, (1, 0)), (3, (0, 1)), (5, (2, 0)), (6, (0, 2))):
             self.assertEqual(IRacingProvider._side_traffic(raw), expected)

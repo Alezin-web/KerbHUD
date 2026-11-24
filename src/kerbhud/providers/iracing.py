@@ -328,6 +328,7 @@ class IRacingProvider(Provider):
                    "IncidentLimit(raw)": wopts.get("IncidentLimit"),
                    "PlayerCarMyIncidentCount": inc,
                    "CarIdxTireCompound(presente)": "CarIdxTireCompound" in self._vars,
+                   "pneus_brutos": self.tire_raw_debug(buf),
                    "posicao_do_carro": ("GPS Lat/Lon" if CAP_PLAYER_XY in caps else
                                         "estimada (Speed+YawNorth)" if CAP_PLAYER_XY_ESTIMATED in caps else
                                         "indisponível (faltam Lat/Lon e YawNorth/SessionTime)")},
@@ -474,6 +475,24 @@ class IRacingProvider(Provider):
         """CarLeftRight: 0 desligado, 1 livre, 2 esquerda, 3 direita, 4 ambos, 5 dois à esquerda, 6 dois à direita."""
         table = {1: (0, 0), 2: (1, 0), 3: (0, 1), 4: (1, 1), 5: (2, 0), 6: (0, 2)}
         return table.get(int(raw)) if raw is not None else None
+
+    def tire_raw_debug(self, buf: bytes) -> str:
+        """Diagnóstico: valores CRUS dos pneus como o iRacing envia (nomes que existem, zonas e pressão por roda) e se o
+        módulo recebeu pneus. Serve para ver o que o jogo realmente manda (ex.: zerado fora do pit)."""
+        corners = ("LF", "RF", "LR", "RR")
+        names = sorted(n for n in self._vars if n[:2] in corners and any(k in n for k in ("temp", "wear", "ress")))
+        parts = []
+        for pre in corners:
+            vals = []
+            for suffix in ("tempCL", "tempCM", "tempCR", "tempL", "tempM", "tempR", "wearL", "wearM", "wearR",
+                           "pressure", "coldPressure"):
+                v = self._get(buf, pre + suffix)
+                if v is not None:
+                    vals.append(f"{suffix}={v:.2f}" if isinstance(v, float) else f"{suffix}={v}")
+            parts.append(f"{pre}[{' '.join(vals) or 'sem variaveis'}]")
+        return (f"variaveis={len(names)} " + " ".join(parts)
+                + f" | IsOnTrack={self._get(buf, 'IsOnTrack')} OnPitRoad={self._get(buf, 'OnPitRoad')}"
+                + f" PlayerTrackSurface={self._get(buf, 'PlayerTrackSurface')}")
 
     def _tires(self, buf: bytes) -> Optional[TireSet]:
         """Temperatura, pressão e desgaste por roda (VERIFICAR os nomes e quando o iRacing atualiza o desgaste)."""
