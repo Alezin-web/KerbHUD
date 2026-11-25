@@ -25,6 +25,7 @@ def _num(v, digits: int = 1) -> str:
 
 
 class FuelModule(ModuleWindow):
+    REPAINT_HZ = 10  # muda devagar: não precisa redesenhar a cada quadro da tela
     def __init__(self, spec, ctx=None):
         super().__init__(spec, ctx)
         self._tracker = FuelTracker()

@@ -53,6 +53,7 @@ class _Prep:
 
 
 class StandingsModule(ModuleWindow):
+    REPAINT_HZ = 10  # muda devagar: não precisa redesenhar a cada quadro da tela
     CORNER = 8.0
     ANCHOR_TOPLEFT = True
     FIXED_SCALE = True

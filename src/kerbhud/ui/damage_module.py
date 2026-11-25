@@ -21,6 +21,7 @@ _NEUTRAL = "#3a3a44"
 
 
 class DamageModule(ModuleWindow):
+    REPAINT_HZ = 10  # muda devagar: não precisa redesenhar a cada quadro da tela
     def paint_content(self, p: QPainter, w: float, h: float) -> None:
         v = damage_view(self.snapshot)
         p.setPen(Qt.NoPen)

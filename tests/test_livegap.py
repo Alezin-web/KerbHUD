@@ -103,3 +103,39 @@ class ShiftLearnTest(unittest.TestCase):
         self.assertEqual(s.reference(8000.0), 7000)
         s.observe(2, 9000, 1.0, 10000.0, 9.0)  # outro carro (RPM máximo muda)
         self.assertEqual(s.reference(10000.0), 10000.0)
+
+
+class LmuFlagsTest(unittest.TestCase):
+    def test_adapts_when_rest_value_changes_and_ignores_all_sectors_changing(self):
+        from kerbhud.core.sectorflags import SectorFlagWatch
+        t = [0.0]
+        w = SectorFlagWatch(clock=lambda: t[0])
+        for _ in range(100):
+            t[0] += 0.1
+            w.update([0, 0, 0])
+        for _ in range(20):  # o jogo passa a usar outro valor em TODOS os setores (ex.: entrou na pista): não é amarela
+            t[0] += 0.1
+            self.assertFalse(w.update([1, 1, 1]))
+        for _ in range(1500):  # e depois de um tempo esse vira o normal
+            t[0] += 0.1
+            w.update([1, 1, 1])
+        self.assertEqual(w.baseline(0), 1)
+        t[0] += 0.1
+        w.update([1, 5, 1])
+        t[0] += 0.6
+        self.assertTrue(w.update([1, 5, 1]))  # amarela de verdade num setor
+
+    def test_checkered_when_player_finishes_and_expires(self):
+        from types import SimpleNamespace as NS
+        from kerbhud.core.sectorflags import FinishWatch
+        from kerbhud.providers.lmu import lmu_flags
+        t = [0.0]
+        f = FinishWatch(clock=lambda: t[0])
+        f.update(False)
+        self.assertFalse(f.visible)
+        f.update(True)
+        me = NS(mFlag=0, mUnderYellow=False)
+        self.assertEqual(lmu_flags(5, me, False, f.visible), ["checkered", "green"])
+        t[0] += 30.0
+        f.update(True)
+        self.assertFalse(f.visible)

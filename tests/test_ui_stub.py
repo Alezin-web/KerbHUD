@@ -63,6 +63,7 @@ def _install_stub():
         def stop(self): self.running = False
         def setSingleShot(self, v): pass
         def setInterval(self, v): pass
+        def setTimerType(self, t): pass
 
     class QAbstractNativeEventFilter:
         def __init__(self): pass
@@ -332,6 +333,51 @@ class TestUiWithStub(unittest.TestCase):
         win.mousePressEvent(_Ev(395, 295, 500, 400))
         win.mouseMoveEvent(_Ev(395, 295, 600, 400, mods=0x08000000))
         self.assertEqual(win._geom()[2:], (500, 300))
+
+    def test_slow_modules_repaint_at_their_own_rate_but_never_stay_stale(self):
+        om = self.om
+        screens = [self.ScreenInfo("S1", 0, 0, 1920, 1080)]
+        om.current_screens = lambda: (screens, "S1")
+        engine = MagicMock()
+        engine.latest.return_value = self.snap
+        with tempfile.TemporaryDirectory() as d:
+            store = self.LayoutStore(Path(d) / "layouts")
+            store.ensure_defaults()
+            mgr = om.OverlayManager(engine, store, {"ui_hz": 60})
+            mgr.load_active()
+            clock = [100.0]
+            with __import__("unittest").mock.patch.object(om.time, "monotonic", lambda: clock[0]):
+                mgr._on_tick()
+                self.assertIs(mgr.windows["inputs"].snapshot, self.snap)       # rápido: recebe na hora
+                self.assertIs(mgr.windows["standings"].snapshot, self.snap)    # lento: o primeiro também
+                newer = self.snap.__class__(sim=self.snap.sim, connected=True)
+                engine.latest.return_value = newer
+                clock[0] += 0.016
+                mgr._on_tick()
+                self.assertIs(mgr.windows["inputs"].snapshot, newer)           # a cada quadro
+                self.assertIs(mgr.windows["standings"].snapshot, self.snap)    # 10 Hz: ainda não é a vez
+                clock[0] += 0.2
+                mgr._on_tick()                                                 # sem snapshot novo, mas a entrega pendente sai
+                self.assertIs(mgr.windows["standings"].snapshot, newer)
+
+    def test_inputs_window_grows_to_fit_content_on_other_aspect_ratios(self):
+        om = self.om
+        screens = [self.ScreenInfo("S1", 0, 0, 2560, 1080)]  # ultrawide: largura grande, altura pequena
+        om.current_screens = lambda: (screens, "S1")
+        engine = MagicMock()
+        engine.latest.return_value = self.snap
+        with tempfile.TemporaryDirectory() as d:
+            store = self.LayoutStore(Path(d) / "layouts")
+            store.ensure_defaults()
+            mgr = om.OverlayManager(engine, store, {"ui_hz": 60})
+            layout = om.preset_corrida()
+            layout.modules["inputs"].rect = (0.36, 0.88, 0.28, 0.05)  # baixa demais para o texto
+            layout.modules["inputs"].options["scale"] = 0.0016
+            mgr.apply_layout(layout)
+            w = mgr.windows["inputs"]
+            from kerbhud.ui import inputs_module as im
+            self.assertGreaterEqual(w.height(), int(im.DESIGN_H * w.fixed_scale_px()))
+            self.assertGreaterEqual(w.width(), int(im.MIN_W * w.fixed_scale_px()))
 
     def test_manager_end_to_end(self):
         om = self.om
@@ -1410,10 +1456,10 @@ class TestUiWithStub(unittest.TestCase):
         for module_id in ("standings", "inputs"):
             win = self.modules.create_module(module_id)
             win.options = {"scale": 0.0005}
-            results = self._paint_events(win, [(1100, 640), (700, 300), (1600, 900), (300, 120)])
+            results = self._paint_events(win, [(1100, 640), (700, 300), (1600, 900), (460, 120)])
             scales = {r[0] for r in results}
             self.assertEqual(scales, {(0.96, 0.96)}, module_id)  # sempre 0,0005 x 1920
-            for (w, h), (_s, avail) in zip([(1100, 640), (700, 300), (1600, 900), (300, 120)], results):
+            for (w, h), (_s, avail) in zip([(1100, 640), (700, 300), (1600, 900), (460, 120)], results):
                 self.assertAlmostEqual(avail[0], w / 0.96, places=6)  # a janela só define a ÁREA disponível
                 self.assertAlmostEqual(avail[1], h / 0.96, places=6)
         # nos demais módulos o comportamento continua: o conteúdo acompanha a janela

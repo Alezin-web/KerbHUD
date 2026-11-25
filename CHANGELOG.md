@@ -1,3 +1,13 @@
+## 0.17.15.2 — Patch: hotfix
+
+**Correções**
+* **Inputs cortado em alguns monitores:** o tamanho do texto é fração da LARGURA do monitor e a altura da janela é fração da ALTURA, então em monitores de outra proporção (16:10, ultrawide, etc.) a janela ficava baixa demais e o conteúdo era cortado embaixo, e mudar a escala não resolvia. Agora a janela cresce sozinha até caber o conteúdo e, se ela for reduzida abaixo disso, o texto diminui em vez de cortar.
+* **DigiFlag no Le Mans Ultimate:** a bandeira amarela ficava presa depois de outra bandeira (ex.: azul) e só voltava a amarela. O valor "normal" de cada setor agora se adapta continuamente (janela de 2 min) e uma mudança em todos os setores ao mesmo tempo não conta como amarela de setor.
+* **Bandeira de fim de corrida (LMU):** passa a aparecer quando você cruza a linha de chegada e fica visível por 25 s (antes só dependia da fase da sessão, que muda tarde).
+
+**Melhorias**
+* **Overlays mais fluidas:** o temporizador da tela agora é preciso (antes irregular no Windows), o Windows passa a usar temporizador de 1 ms enquanto o KerbHUD está aberto, a tela espera menos pela thread de leitura do jogo e módulos que mudam devagar (Standings, Relative, Mapa, Pneus, Combustível, Danos) redesenham em ritmo próprio (10 a 20 vezes por segundo) em vez de todo quadro, deixando CPU para os rápidos (Inputs, Telemetria, Radar, DigiFlag). O padrão de "Atualização da tela" passa de 30 para 60 quadros/s (quem estava no padrão antigo é atualizado uma vez; a sua escolha depois disso é respeitada).
+
 ## 0.17.15.1 — Patch: hotfix
 
 **Correções**

@@ -70,6 +70,27 @@ def set_no_activate(hwnd: int) -> bool:
     return _modify_exstyle(hwnd, add=WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW)
 
 
+def begin_timer_resolution(ms: int = 1) -> bool:
+    """Pede ao Windows temporizador de ~1 ms (o padrão é ~15,6 ms: esperas e QTimer ficam irregulares, e a overlay "engasga")."""
+    if not IS_WIN:
+        return False
+    try:
+        import ctypes
+        return ctypes.windll.winmm.timeBeginPeriod(int(ms)) == 0
+    except Exception:  # noqa: BLE001 - só uma melhoria de ritmo; nunca pode impedir de abrir
+        return False
+
+
+def end_timer_resolution(ms: int = 1) -> None:
+    if not IS_WIN:
+        return
+    try:
+        import ctypes
+        ctypes.windll.winmm.timeEndPeriod(int(ms))
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def set_topmost(hwnd: int, on: bool = True) -> bool:
     if not IS_WIN or not hwnd:
         return False

@@ -52,6 +52,9 @@ class InputsModule(ModuleWindow):
     def layout_size(self, avail_w: float, avail_h: float) -> tuple[float, float]:
         return max(avail_w, MIN_W), DESIGN_H
 
+    def min_design(self) -> tuple[float, float]:
+        return MIN_W, DESIGN_H
+
     def visible_pedals(self) -> list[str]:
         """Barras exibidas, da esquerda para a direita."""
         names = ["brake", "throttle"]

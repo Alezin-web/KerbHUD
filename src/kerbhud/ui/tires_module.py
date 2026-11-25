@@ -32,6 +32,7 @@ def _wear_color(pct) -> str:
 
 
 class TiresModule(ModuleWindow):
+    REPAINT_HZ = 10  # muda devagar: não precisa redesenhar a cada quadro da tela
     def paint_content(self, p: QPainter, w: float, h: float) -> None:
         v = tire_view(self.snapshot)
         p.setPen(Qt.NoPen)

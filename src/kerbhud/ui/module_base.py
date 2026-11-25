@@ -137,6 +137,8 @@ class ModuleWindow(QWidget):
         self.resize(spec.design_w, spec.design_h)
 
     # ---- API para o gerenciador ---------------------------------------- #
+    REPAINT_HZ: Optional[int] = None  # None = redesenha a cada quadro da tela; números baixos poupam CPU em módulos que mudam devagar
+
     def update_snapshot(self, snap: Snapshot) -> None:
         self.snapshot = snap
         if self.isVisible():
@@ -256,6 +258,23 @@ class ModuleWindow(QWidget):
         dw, dh = self.design_size()
         return max(min(self.width() / dw, self.height() / dh), 0.01)
 
+    def min_design(self) -> tuple[float, float]:
+        """Tamanho mínimo (unidades de desenho) que o conteúdo precisa para não ficar cortado; (0, 0) = sem mínimo."""
+        return 0.0, 0.0
+
+    def fit_min_size(self) -> None:
+        """Cresce a janela até caber o conteúdo na escala de texto atual. A escala é fração da LARGURA do monitor e a
+        altura da janela é fração da ALTURA: em monitores de outra proporção (16:10, ultrawide...) a janela ficava baixa
+        demais e o conteúdo, cortado embaixo."""
+        mw, mh = self.min_design()
+        if not (self.FIXED_SCALE and mw and mh):
+            return
+        s = self.fixed_scale_px()
+        need_w, need_h = int(mw * s + 0.999), int(mh * s + 0.999)
+        x, y, w, h = self._geom()
+        if w < need_w or h < need_h:
+            self.setGeometry(x, y, max(w, need_w), max(h, need_h))
+
     def layout_size(self, avail_w: float, avail_h: float) -> tuple[float, float]:
         """Área (em unidades de desenho) que o conteúdo realmente usa dentro da área disponível; o painel de
         fundo cobre só isso. Módulos de escala fixa sobrescrevem."""
@@ -318,6 +337,9 @@ class ModuleWindow(QWidget):
     def _paint_fixed(self, p: QPainter, w: float, h: float) -> None:
         """Módulos de escala fixa: o texto tem tamanho constante e a janela define a área visível."""
         s = self.fixed_scale_px()
+        mw, mh = self.min_design()
+        if mw and mh:  # janela menor que o conteúdo: reduz o texto em vez de cortar
+            s = max(min(s, w / mw, h / mh), 0.01)
         aw, ah = w / s, h / s  # área disponível em unidades de desenho
         uw, uh = self.layout_size(aw, ah)
         radius = self.CORNER * s

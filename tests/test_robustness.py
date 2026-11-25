@@ -123,7 +123,7 @@ class TestSettingsAreForgiving(unittest.TestCase):
     def test_wrong_types_fall_back_to_defaults(self):
         cfg, _ = self.load('{"update_hz": "abc", "ui_hz": null, "simulator": "xbox", "visibility": 7, '
                            '"hotkeys": "nada", "iracing": [], "window_geometry": [1, 2], "lmu": {"driver_rank": "A"}}')
-        self.assertEqual((cfg["update_hz"], cfg["ui_hz"], cfg["simulator"], cfg["visibility"]), (60, 30, "auto", "always"))
+        self.assertEqual((cfg["update_hz"], cfg["ui_hz"], cfg["simulator"], cfg["visibility"]), (60, 60, "auto", "always"))
         self.assertEqual(cfg["hotkeys"]["toggle_edit"], "Ctrl+Alt+E")
         self.assertTrue(cfg["iracing"]["live_positions"])
         self.assertIsNone(cfg["window_geometry"])
@@ -189,3 +189,20 @@ class TestLog(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PerfMigrationTest(unittest.TestCase):
+    def test_old_default_ui_hz_moves_to_60_once_and_later_choice_is_kept(self):
+        import json, tempfile
+        from pathlib import Path
+        from kerbhud.core.engine import load_settings
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "settings.json"
+            p.write_text(json.dumps({"ui_hz": 30, "units": "mph"}), encoding="utf-8")
+            self.assertEqual(load_settings(p)["ui_hz"], 60)
+            saved = json.loads(p.read_text(encoding="utf-8"))
+            self.assertEqual((saved["perf_rev"], saved["ui_hz"], saved["units"]), (1, 60, "mph"))
+            p.write_text(json.dumps({"ui_hz": 30, "perf_rev": 1}), encoding="utf-8")  # escolheu 30 depois: respeita
+            self.assertEqual(load_settings(p)["ui_hz"], 30)
+            p.write_text(json.dumps({"ui_hz": 45}), encoding="utf-8")  # escolha manual diferente do padrão antigo
+            self.assertEqual(load_settings(p)["ui_hz"], 45)

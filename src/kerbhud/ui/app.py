@@ -626,6 +626,9 @@ class Tray:
 def run(sim: str = "auto", edit: bool = False, demo_scenario: str | None = None) -> int:
     winapi.set_app_user_model_id("KerbHUD.App")  # a barra de tarefas usa o nosso ícone, não o do Python
     app = QApplication(sys.argv)
+    sys.setswitchinterval(0.001)  # a leitura do jogo roda em outra thread: a tela espera menos para voltar a desenhar
+    winapi.begin_timer_resolution(1)  # temporizador de 1 ms (o padrão do Windows é ~15 ms e deixa o ritmo irregular)
+    app.aboutToQuit.connect(lambda: winapi.end_timer_resolution(1))
     app.setWindowIcon(app_icon())  # todas as janelas e diálogos herdam
     app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("KerbHUD")

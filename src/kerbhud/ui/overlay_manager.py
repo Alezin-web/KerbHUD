@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from typing import Optional
 
-from PySide6.QtCore import QObject, QTimer
+import time
+
+from PySide6.QtCore import QObject, Qt, QTimer
 from PySide6.QtGui import QGuiApplication
 
 from ..core import brands, visibility, winapi
@@ -43,6 +45,9 @@ class OverlayManager(QObject):
         self._last_snap: Optional[Snapshot] = None
 
         self._tick = QTimer(self)
+        self._tick.setTimerType(Qt.PreciseTimer)  # o padrão (grosso) tem erro de vários ms e deixa o ritmo irregular
+        self._pending: dict = {}  # módulo -> snapshot que ainda não foi entregue (módulos com REPAINT_HZ)
+        self._last_push: dict = {}
         self._tick.timeout.connect(self._on_tick)
         self._tick.start(max(5, int(1000 / max(1, int(settings.get("ui_hz", 30))))))
 
@@ -82,6 +87,7 @@ class OverlayManager(QObject):
             w.set_opacity(st.opacity)
             w.options = st.options  # mesmo dict do layout: mudanças são persistidas
             w.set_reference_width(pick_screen(st.screen, screens, primary).w)  # base da escala de texto fixa
+            w.fit_min_size()  # monitor de outra proporção: não deixa o conteúdo cortado
             w.set_always_on_top(layout.always_on_top)
         self._sync_visibility()
         self.store.set_active(layout.name)
@@ -286,9 +292,20 @@ class OverlayManager(QObject):
             self._last_snap = snap
             if self._vis_key(snap) != before:
                 self._sync_visibility()  # entrou/saiu da pista, da garagem ou dos menus: "só pista"/"só garagem" aparecem/somem
-            for w in self.windows.values():
+            for mid, w in self.windows.items():
                 if w.isVisible():
-                    w.update_snapshot(snap)
+                    self._pending[mid] = snap
+        now = time.monotonic()
+        for mid in list(self._pending):
+            w = self.windows[mid]
+            if not w.isVisible():
+                del self._pending[mid]
+                continue
+            hz = w.REPAINT_HZ
+            if hz and now - self._last_push.get(mid, 0.0) < 1.0 / hz:
+                continue  # ainda não é a vez deste módulo; o último snapshot fica guardado e é entregue depois
+            self._last_push[mid] = now
+            w.update_snapshot(self._pending.pop(mid))
         # animações de ultrapassagem continuam mesmo sem snapshot novo (jogo pausado, por exemplo)
         for w in self.windows.values():
             if w.isVisible() and (w.is_animating or w.fading):

@@ -17,7 +17,7 @@ import time
 from typing import Optional
 
 from ..core.assists import lockup
-from ..core.sectorflags import SectorFlagWatch
+from ..core.sectorflags import FinishWatch, SectorFlagWatch
 from ..core.shiftlearn import ShiftLearner
 from ..core.heading import MotionHeading, OriCalibrator, TurnSense
 from ..core.memory import MappingBoundsError, MappingNotFound, MemoryView, Opener, open_named_mapping
@@ -119,7 +119,7 @@ def player_pose(ori) -> Optional[PlayerPose]:
     return PlayerPose(forward=fwd, left=left) if fwd and left else None
 
 
-def lmu_flags(game_phase: int, player_scoring, sector_yellow: bool) -> list[str]:
+def lmu_flags(game_phase: int, player_scoring, sector_yellow: bool, finished: bool = False) -> list[str]:
     """Bandeiras mostradas ao piloto (VERIFICAR): fase do jogo, selo azul do carro e amarela de setor.
 
     A amarela de setor vem de `SectorFlagWatch` (mudança do valor de repouso de `mSectorFlag`): antes qualquer valor
@@ -134,7 +134,7 @@ def lmu_flags(game_phase: int, player_scoring, sector_yellow: bool) -> list[str]
         flags.append("yellow")
     if game_phase == 6:
         flags.append("caution")
-    if game_phase == 8:
+    if game_phase == 8 or finished:
         flags.append("checkered")
     if game_phase == 5:
         flags.append("green")
@@ -162,6 +162,7 @@ class LmuProvider(Provider):
         self._turn = TurnSense()
         self._shift = ShiftLearner()
         self._sectors = SectorFlagWatch()
+        self._finish = FinishWatch()
         self._extra: dict[int, tuple[Optional[str], Optional[float]]] = {}  # mID -> (pneu, energia%)
         self._extra_at = 0.0
         self._extra_debug: dict = {}
@@ -183,6 +184,7 @@ class LmuProvider(Provider):
         self._ori_cal = OriCalibrator()
         self._turn = TurnSense()
         self._sectors.reset()
+        self._finish.reset()
         self._extra, self._extra_at = {}, 0.0
         return True
 
@@ -410,9 +412,12 @@ class LmuProvider(Provider):
         if pose is not None:
             caps.add(CAP_POSE)
         if active:
-            session.flags = lmu_flags(int(info.mGamePhase), me_v, self._sectors.update([int(f) for f in info.mSectorFlag]))
+            fin = me_v is not None and int(me_v.mFinishStatus) == 1  # o piloto cruzou a linha de chegada
+            self._finish.update(fin)
+            session.flags = lmu_flags(int(info.mGamePhase), me_v, self._sectors.update([int(f) for f in info.mSectorFlag]),
+                                      self._finish.visible)
             raw_flags = (f"fase={int(info.mGamePhase)} setores={[int(f) for f in info.mSectorFlag]} "
-                         f"mFlag={int(me_v.mFlag) if me_v is not None else None} "
+                         f"mFlag={int(me_v.mFlag) if me_v is not None else None} fim={int(me_v.mFinishStatus) if me_v is not None else None} "
                          f"underYellow={bool(me_v.mUnderYellow) if me_v is not None else None} "
                          f"yellowState={bytes(info.mYellowFlagState)!r} repouso={[self._sectors.baseline(i) for i in range(3)]}")
             caps.add(CAP_FLAGS)

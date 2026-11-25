@@ -29,7 +29,8 @@ DEFAULT_SETTINGS = {
     "units": "kmh",
     "iracing": {"invert_clutch": True, "live_positions": True},
     "lmu": {"driver_rank": None, "safety_rank": None, "contact_badge": None},
-    "ui_hz": 30,
+    "ui_hz": 60,
+    "perf_rev": 1,  # revisão de desempenho já aplicada às configurações salvas (ver load_settings)
     "logo_wordmark": True,  # sem arquivo de logo: mostra o nome da fabricante em texto (false = nada)
     "my_country": None,  # ex.: "br": mostra a SUA bandeira (o LMU não informa o país dos pilotos)
     "show_window_at_startup": True,  # abre a janela principal ao iniciar (false = só o ícone da bandeja)
@@ -90,6 +91,7 @@ def load_settings(path: Optional[Path] = None) -> dict:
     """Padrões + o que o usuário salvou. Arquivo ilegível ou corrompido não impede abrir: ele é guardado como
     `settings.json.bad` (para você consultar) e o programa começa com os padrões."""
     cfg = json.loads(json.dumps(DEFAULT_SETTINGS))
+    user = None
     if path and Path(path).exists():
         path = Path(path)
         try:
@@ -108,6 +110,18 @@ def load_settings(path: Optional[Path] = None) -> dict:
                 cfg[k].update(v)
             else:
                 cfg[k] = v
+    if isinstance(user, dict) and not _clamped_int(user.get("perf_rev"), 0, 0, 99):
+        # 1ª abertura depois da otimização: quem ficou no padrão antigo (30 quadros/s) passa para o novo (60); escolha manual fica
+        if cfg.get("ui_hz") == 30:
+            cfg["ui_hz"] = 60
+        cfg["perf_rev"] = 1
+        if path is not None:  # grava para não repetir a migração (e respeitar uma escolha futura de 30)
+            try:
+                data = json.loads(Path(path).read_text(encoding="utf-8"))
+                data["perf_rev"], data["ui_hz"] = 1, cfg["ui_hz"]
+                write_settings_file(Path(path), data)
+            except (OSError, ValueError):
+                pass
     return sanitize_settings(cfg)
 
 

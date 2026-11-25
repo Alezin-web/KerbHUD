@@ -1,3 +1,13 @@
+## 0.17.15.2 — Patch: hotfix
+
+**Fixes**
+* **Inputs cut off on some monitors:** text size is a fraction of the monitor WIDTH while the window height is a fraction of the HEIGHT, so on monitors with another aspect ratio (16:10, ultrawide, etc.) the window was too short and the content was cut off at the bottom, and changing the scale did not help. The window now grows by itself until the content fits and, if it is made smaller than that, the text shrinks instead of being cut.
+* **DigiFlag in Le Mans Ultimate:** the yellow flag got stuck after another flag (e.g. blue) and returned to yellow. The "normal" value of each sector now adapts continuously (2-minute window) and a change in all sectors at once does not count as a sector yellow.
+* **End-of-race flag (LMU):** it now shows when you cross the finish line and stays for 25 s (before it depended only on the session phase, which changes late).
+
+**Improvements**
+* **Smoother overlays:** the screen timer is now precise (it used to be irregular on Windows), Windows uses a 1 ms timer while KerbHUD is open, the screen waits less for the game-reading thread, and slow-changing modules (Standings, Relative, Map, Tyres, Fuel, Damage) repaint at their own rate (10 to 20 times per second) instead of every frame, leaving CPU for the fast ones (Inputs, Telemetry, Radar, DigiFlag). The default "Screen refresh" goes from 30 to 60 frames/s (users on the old default are updated once; your choice afterwards is respected).
+
 ## 0.17.15.1 — Patch: hotfix
 
 **Fixes**

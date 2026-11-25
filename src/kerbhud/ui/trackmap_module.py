@@ -24,6 +24,7 @@ DOT_R, ME_R = 10.0, 12.0
 
 
 class TrackMapModule(ModuleWindow):
+    REPAINT_HZ = 20  # muda devagar: não precisa redesenhar a cada quadro da tela
     PANEL_BG = False
 
     def __init__(self, spec, ctx=None):

@@ -35,6 +35,7 @@ _TREND_COLOR = {STATE_FAVORABLE: theme.GREEN, STATE_DANGER: theme.RED, STATE_ALE
 
 
 class RelativeModule(ModuleWindow):
+    REPAINT_HZ = 15  # muda devagar: não precisa redesenhar a cada quadro da tela
     CORNER = 8.0
     ANCHOR_TOPLEFT = True
 
