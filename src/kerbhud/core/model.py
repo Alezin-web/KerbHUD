@@ -94,6 +94,7 @@ class Inputs:
     speed_ms: float = 0.0
     shift_pct: Optional[float] = None  # 0..1, 1 = hora de trocar
     shift_source: Optional[str] = None  # "sim" | "derived"
+    shift_blink: Optional[bool] = None  # LEDs piscando (hora de trocar) segundo o próprio jogo; None = calcular pelo shift_pct
     abs_active: Optional[bool] = None  # ABS atuando agora (None = o simulador não informa)
     tc_active: Optional[bool] = None  # controle de tração atuando agora (None = não informa)
     lockup: Optional[bool] = None  # roda travando (derivado no LMU; None = não dá para saber)
@@ -178,6 +179,7 @@ class TireWheel:
     wear_zones: Optional[tuple[float, float, float]] = None  # desgaste esquerda/centro/direita (100 = novo), se informado
     flat: Optional[bool] = None
     detached: Optional[bool] = None
+    stale: bool = False  # True = o simulador não está informando agora; são os últimos valores reais (ex.: do último pit)
 
 
 @dataclass

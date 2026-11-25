@@ -18,6 +18,7 @@ from typing import Optional
 
 from ..core.assists import lockup
 from ..core.sectorflags import SectorFlagWatch
+from ..core.shiftlearn import ShiftLearner
 from ..core.heading import MotionHeading, OriCalibrator, TurnSense
 from ..core.memory import MappingBoundsError, MappingNotFound, MemoryView, Opener, open_named_mapping
 from ..core.model import (
@@ -159,6 +160,7 @@ class LmuProvider(Provider):
         self._heading = MotionHeading()
         self._ori_cal = OriCalibrator()
         self._turn = TurnSense()
+        self._shift = ShiftLearner()
         self._sectors = SectorFlagWatch()
         self._extra: dict[int, tuple[Optional[str], Optional[float]]] = {}  # mID -> (pneu, energia%)
         self._extra_at = 0.0
@@ -341,6 +343,8 @@ class LmuProvider(Provider):
                 c.class_position = rank
 
         inputs = self._inputs(telem) if telem is not None else None
+        if inputs is not None:
+            self._apply_shift(inputs)
 
         caps = {CAP_STANDINGS, CAP_GAPS, CAP_BEST_LAST_LAP, CAP_CLASS,
                 CAP_TRACKMAP_PCT, CAP_TRACKMAP_XY}
@@ -436,6 +440,13 @@ class LmuProvider(Provider):
             status_text="Le Mans Ultimate conectado" if active else "LMU conectado (sem sessão ativa)",
             debug=debug,
         )
+
+    def _apply_shift(self, i: Inputs) -> None:
+        """Troca o RPM de referência do LED pelo aprendido nas trocas de marcha (o jogo não informa o do shift light)."""
+        self._shift.observe(i.gear, i.rpm, i.throttle, i.rpm_max, time.monotonic())
+        ref = self._shift.reference(i.rpm_max)
+        if ref:
+            i.shift_pct = max(0.0, min(1.0, i.rpm / ref))
 
     @staticmethod
     def _inputs(t) -> Inputs:

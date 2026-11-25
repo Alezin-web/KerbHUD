@@ -15,6 +15,9 @@ from typing import Optional
 from .model import Sim, Snapshot
 
 
+DOWNSHIFT_WINDOW_S = 0.8  # janela, depois de reduzir, em que a acelerada conta como "pico" de redução
+
+
 @dataclass(frozen=True)
 class Sample:
     t: float  # time.monotonic() no momento em que o snapshot chegou
@@ -30,6 +33,7 @@ class Sample:
     abs_on: bool = False
     tc_on: bool = False
     lock: bool = False
+    down: bool = False  # acelerada ("pico") logo após reduzir a marcha
 
 
 class TelemetryHistory:
@@ -38,20 +42,27 @@ class TelemetryHistory:
         self._buf: deque[Sample] = deque(maxlen=max_samples)
         self._lock = threading.Lock()
         self._sim: Optional[Sim] = None
+        self._gear: Optional[int] = None
+        self._down_until = -1e9
 
     # ---- escrita (thread do motor) ------------------------------------- #
     def on_snapshot(self, snap: Snapshot, now: Optional[float] = None) -> None:
         with self._lock:
             if not snap.connected or snap.sim != self._sim:
                 self._buf.clear()  # simulador mudou ou desconectou: histórico antigo não vale
+                self._gear = None
             self._sim = snap.sim if snap.connected else None
             i = snap.inputs
             if not snap.connected or i is None:
                 return
             t = time.monotonic() if now is None else now
+            if self._gear is not None and i.gear >= 1 and self._gear > i.gear and self._gear >= 2:  # reduziu a marcha
+                self._down_until = t + DOWNSHIFT_WINDOW_S
+            self._gear = i.gear
+            down = t <= self._down_until and i.throttle > 0.05
             self._buf.append(Sample(t, i.throttle, i.brake, i.clutch, i.speed_ms, i.rpm,
                                     i.steering, i.rpm_max, i.steering_deg, i.gear,
-                                    i.abs_active is True, i.tc_active is True, i.lockup is True))
+                                    i.abs_active is True, i.tc_active is True, i.lockup is True, down))
             cutoff = t - self.max_seconds
             while self._buf and self._buf[0].t < cutoff:
                 self._buf.popleft()

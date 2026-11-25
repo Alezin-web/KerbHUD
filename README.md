@@ -25,7 +25,7 @@ O nome vem do **kerb**, a zebra vermelha e branca na beira da pista. *(Antes cha
 - 🎛️ **Janela principal simples:** liga/desliga cada módulo, ajusta as opções e escolhe quando ele aparece, tudo num lugar só. Fechar a janela minimiza para a bandeja.
 - 📐 **Layouts:** move e redimensiona no modo de edição, salva quantos layouts quiser e troca por atalho, até no meio da corrida.
 - 👁️ **Aparece só quando deve:** *Sempre*, *Só na pista* ou *Só na garagem*, com fade ao aparecer e ao sumir.
-- 🟡 **ABS/TC e travamento no Inputs:** o painel e a linha do freio ficam dourados quando o ABS ou o TC atuam, e um ponto azul marca a roda travando. Dá para escolher o volante (estilos prontos ou a sua imagem).
+- 🟡 **ABS/TC e travamento no Inputs:** o painel e a linha do freio ficam dourados quando o ABS ou o TC atuam, e um ponto azul marca a roda travando. Dá para escolher o volante (estilos prontos ou a sua imagem). Os picos do acelerador ao reduzir a marcha aparecem em roxo no gráfico.
 - 🖱️ **Barra de tarefas livre:** enquanto você usa a barra de tarefas, a bandeja ou um menu, o overlay sai da frente.
 - 🔄 **Atualização com um clique:** o programa confere o GitHub, verifica o arquivo e instala. Suas logos, bandeiras e layouts nunca são tocados.
 - 🧪 **Modo DEMO:** teste tudo sem abrir o jogo (bem sinalizado; dado real nunca é inventado).
@@ -117,7 +117,7 @@ The name comes from the **kerb**, the red-and-white rumble strip at the edge of 
 - 🎛️ **Simple main window:** turn each module on/off, adjust its options and choose when it appears, all in one place. Closing it minimizes to the tray.
 - 📐 **Layouts:** move and resize in edit mode, save as many layouts as you want and switch with a hotkey, even mid-race.
 - 👁️ **Shows up only when it should:** *Always*, *On track only* or *In the garage only*, with a fade in and out.
-- 🟡 **ABS/TC and wheel lock-up in Inputs:** the panel and the brake line turn gold when ABS or TC act, and a blue dot marks a locking wheel. Pick the steering wheel (built-in styles or your own image).
+- 🟡 **ABS/TC and wheel lock-up in Inputs:** the panel and the brake line turn gold when ABS or TC act, and a blue dot marks a locking wheel. Pick the steering wheel (built-in styles or your own image). Throttle blips on downshifts show in purple on the graph.
 - 🖱️ **Taskbar friendly:** while you use the taskbar, the tray or a menu, the overlay steps aside.
 - 🔄 **One-click updates:** the program checks GitHub, verifies the file and installs it. Your logos, flags and layouts are never touched.
 - 🧪 **DEMO mode:** try everything without opening the game (clearly marked; real data is never invented).

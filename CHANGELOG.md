@@ -1,4 +1,17 @@
-## 0.17.14.2 — Patch: diagnóstico dos pneus no iRacing
+## 0.17.15
+
+**Novidades**
+* **Picos do acelerador ao reduzir a marcha:** no gráfico do Inputs e na Telemetria, o trecho do acelerador logo depois de uma redução de marcha (a "ponta-calcanhar") fica **roxo**. Dá para desligar em Config → Inputs/Telemetria.
+
+**Correções**
+* **Int/Gap ao vivo (iRacing, corrida):** antes só atualizavam ao cruzar a linha de chegada. Agora são calculados a cada leitura pela posição de cada carro na pista e pelo tempo estimado até aquele ponto, sempre relativos à própria classe. Se o jogo não informar o tempo de volta da classe, o valor do jogo continua sendo usado.
+* **LED de RPM (iRacing):** passam a usar os mesmos RPMs do shift light do carro no jogo (primeiro LED, último LED e quando pisca), em vez de uma aproximação. O Le Mans Ultimate não informa esses valores: lá o KerbHUD **aprende o RPM de troca** pelas suas trocas de marcha com o acelerador a fundo (e usa o RPM máximo até aprender), e o LED enche até ele.
+* **Removido:** a opção experimental de pneus ao vivo pelo `.ibt` (não funcionou no iRacing). Os pneus seguem mostrando a última leitura do pit.
+
+## 0.17.14.2 — Patch: pneus no iRacing
+
+**Correções**
+* **Pneus (iRacing):** um diagnóstico real (Porsche 992 Cup, até 231 km/h) mostrou que o iRacing **não atualiza** a temperatura da carcaça, o desgaste nem a pressão com o carro na pista: os valores ficam congelados no que eram antes de sair do box. O KerbHUD agora percebe isso (valores idênticos por 8 s com o carro andando) e mostra **"ÚLTIMA LEITURA"** no título, em vez de passar o valor parado por dado de agora. Valores zerados também não contam mais como leitura (antes podiam aparecer como 0 °C/0%). Sem nenhuma leitura ainda, aparece "Sem leitura dos pneus ainda: o iRacing pode só informar no pit". Neste carro o iRacing não informa a pressão atual (só a pressão a frio da garagem), então ela aparece como "-".
 
 **Por dentro**
 * **Diagnóstico (iRacing):** a saída do `Diagnostico-iRacing.bat` agora inclui a linha `pneus_brutos` com os valores crus dos pneus que o iRacing envia (temperatura da carcaça e da superfície, desgaste, pressão) e se o carro está na pista ou no pit. Serve para investigar por que os pneus não aparecem em alguns casos. Não muda nada no overlay.

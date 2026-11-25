@@ -1,4 +1,17 @@
-## 0.17.14.2 — Patch: tyre diagnostics for iRacing
+## 0.17.15
+
+**New**
+* **Throttle blips on downshifts:** in the Inputs graph and in Telemetry, the throttle line right after a downshift (heel-and-toe) turns **purple**. It can be turned off in Config → Inputs/Telemetry.
+
+**Fixes**
+* **Live Int/Gap (iRacing, race):** they used to update only when crossing the finish line. They are now computed on every read from each car's track position and estimated time to that point, always relative to the car's own class. If the game does not report the class lap time, the game's value is still used.
+* **RPM LEDs (iRacing):** they now use the same RPMs as the car's in-game shift light (first LED, last LED and when it blinks) instead of an approximation. Le Mans Ultimate does not provide those values: there KerbHUD **learns your shift RPM** from your full-throttle upshifts (using the maximum RPM until it learns), and the LEDs fill up to it.
+* **Removed:** the experimental live-tyre option via the `.ibt` (it did not work in iRacing). Tyres keep showing the last reading from the pits.
+
+## 0.17.14.2 — Patch: tyres in iRacing
+
+**Fixes**
+* **Tyres (iRacing):** a real diagnostic (Porsche 992 Cup, up to 231 km/h) showed iRacing **does not update** carcass temperature, wear or pressure while the car is on track: the values stay frozen at what they were before leaving the pits. KerbHUD now notices this (identical values for 8 s while moving) and shows **"LAST READING"** in the title instead of passing the frozen value off as live data. Zero values also no longer count as a reading (before they could show as 0 °C/0%). With no reading yet it shows "No tyre reading yet: iRacing may only report in the pits". For this car iRacing does not report the current pressure (only the garage cold pressure), so it shows "-".
 
 **Under the hood**
 * **Diagnostics (iRacing):** the output of `Diagnostico-iRacing.bat` now includes a `pneus_brutos` line with the raw tyre values iRacing sends (carcass and surface temperature, wear, pressure) and whether the car is on track or in the pits. It helps investigate why tyres do not show in some cases. Nothing changes in the overlay.

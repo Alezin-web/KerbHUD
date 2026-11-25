@@ -50,6 +50,9 @@ class TestValidate(unittest.TestCase):
         clean2, _ = validate_patch({"iracing": {"live_positions": False}}, DEFAULT_SETTINGS)
         self.assertEqual(clean2["iracing"], {"live_positions": False})
         self.assertTrue(settings_to_patch(DEFAULT_SETTINGS)["iracing"]["live_positions"])
+        # chave antiga (removida) é ignorada ao validar
+        clean3, _ = validate_patch({"iracing": {"live_tires_ibt": True}}, DEFAULT_SETTINGS)
+        self.assertNotIn("live_tires_ibt", clean3.get("iracing", {}))
 
     def test_bad_values_are_reported_and_not_returned(self):
         clean, errors = validate_patch({"simulator": "rfactor", "update_hz": 7, "units": "furlong",

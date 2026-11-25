@@ -93,10 +93,9 @@ class NoDuplicateMethodsTest(unittest.TestCase):
 
 class PatchVersionTest(unittest.TestCase):
     def test_four_part_patch_version_is_newer_and_has_notes(self):
-        from kerbhud import __version__
         from kerbhud.core.updater import is_newer
         from kerbhud.core.changelog import release_notes
         self.assertTrue(is_newer("0.17.14.1", "0.17.14"))
         self.assertFalse(is_newer("0.17.14", "0.17.14.1"))
         self.assertTrue(is_newer("0.17.15", "0.17.14.1"))
-        self.assertIn("Patch", release_notes(__version__, "Alezin-web/KerbHUD"))
+        self.assertIn("Patch", release_notes("0.17.14.2", "Alezin-web/KerbHUD"))

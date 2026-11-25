@@ -52,8 +52,13 @@ CHECKS = {
     "sugestao_de_melhoria_e_aviso_de_atualizacao": lambda: _suggestion_and_update_notice(),
     "digflag_uma_bandeira_por_vez": lambda: "others" not in _read_src("ui/digflag_module.py").split("def paint_content")[1],
     "abs_tc_dourado_e_travamento_no_inputs": lambda: _assists_in_demo(),
+    "picos_do_acelerador_ao_reduzir_a_marcha": lambda: _downshift_blips_in_demo(),
+    "led_de_rpm_igual_ao_do_jogo_iracing": lambda: "DriverCarSLLastRPM" in _read_src("providers/iracing.py") and "shift_blink" in _read_src("core/model.py"),
+    "led_de_rpm_aprende_a_troca_no_lmu": lambda: "ShiftLearner" in _read_src("providers/lmu.py"),
+    "int_e_gap_ao_vivo_no_iracing": lambda: "live_gaps" in _read_src("providers/iracing.py") and "CarIdxEstTime" in _read_src("core/livegap.py") + _read_src("providers/iracing.py"),
     "volante_do_inputs_escolhivel": lambda: "formula" in _read_src("core/wheels.py") and "wheel_style" in _read_src("core/module_options.py"),
     "fade_ao_aparecer_e_sumir": lambda: "fade_hide" in _read_src("ui/overlay_manager.py") and "begin_fade_in" in _read_src("ui/overlay_manager.py"),
+    "pneus_ultima_leitura_do_pit": lambda: tire_view(at("corrida", 15)).stale and not tire_view(at("corrida", 5)).stale,
     "digflag_azul_antes_da_amarela": lambda: __import__("kerbhud.core.model", fromlist=["x"]).FLAG_PRIORITY.index("blue")
         < __import__("kerbhud.core.model", fromlist=["x"]).FLAG_PRIORITY.index("yellow"),
     "pneus_com_temperatura_em_destaque": lambda: all(c.temp_c is not None and all(t is not None for t in c.temps)
@@ -140,6 +145,16 @@ def _read_src(rel):
     from pathlib import Path
     import kerbhud
     return (Path(kerbhud.__file__).parent / rel).read_text(encoding="utf-8")
+
+
+def _downshift_blips_in_demo():
+    """O DEMO reduz marchas com acelerada e o histórico marca o pico."""
+    from kerbhud.core.history import TelemetryHistory
+    h = TelemetryHistory()
+    for k in range(0, 600):
+        snap = at("corrida", k * 0.2)
+        h.on_snapshot(snap, now=k * 0.2)
+    return any(s.down for s in h.window(200.0))
 
 
 def _assists_in_demo():

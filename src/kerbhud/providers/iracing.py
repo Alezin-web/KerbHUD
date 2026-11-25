@@ -15,6 +15,7 @@ from __future__ import annotations
 import math
 import re
 import struct
+import time
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -29,6 +30,7 @@ from ..core.model import (
 )
 from ..core.deadreckon import DeadReckoner
 from ..core.flags import country_code
+from ..core.livegap import live_gaps
 from ..core.liveorder import LiveOrder
 from ..core.log import get_logger
 from ..core.textfmt import is_race
@@ -89,6 +91,10 @@ def _hex_color(v: Any) -> Optional[str]:
     return f"#{n & 0xFFFFFF:06x}"
 
 
+FROZEN_AFTER_S = 8.0       # pneus iguais por tanto tempo com o carro andando = o jogo não está atualizando
+FROZEN_MIN_SPEED_MS = 5.0
+
+
 class IRacingProvider(Provider):
     sim = Sim.IRACING
 
@@ -99,6 +105,10 @@ class IRacingProvider(Provider):
         self._vars_key: Optional[tuple] = None
         self._last_tick = -1
         self._sess_update = -1
+        self._clock = time.monotonic
+        self._tire_sig: Optional[tuple] = None  # assinatura dos valores de pneu e quando mudou pela última vez
+        self._tire_changed_at = 0.0
+        self._tire_last: dict[str, TireWheel] = {}  # última leitura REAL de cada roda (o iRacing só atualiza no pit)
         self._yaml: dict[str, Any] = {}
         self._drivers: dict[int, dict] = {}
         self._dead_reckoning = DeadReckoner()  # posição estimada: o iRacing normal não publica Lat/Lon
@@ -139,6 +149,8 @@ class IRacingProvider(Provider):
         self._vars_key = None
         self._last_tick = -1
         self._sess_update = -1
+        self._tire_last = {}
+        self._tire_sig = None
         self._yaml = {}
         self._drivers = {}
         self._dead_reckoning.reset()
@@ -423,6 +435,14 @@ class IRacingProvider(Provider):
             if leader_laps is not None and c.laps_completed is not None:
                 c.laps_behind_leader = max(0, leader_laps - c.laps_completed)
             prev = c
+        if live:  # corrida: Int/Gap pela posição na pista, a cada leitura (o do jogo só muda na linha de chegada)
+            def _est(i: int) -> Optional[float]:
+                v = at(est, i, None)
+                return float(v) if v is not None and v >= 0 else None
+            fresh = live_gaps(cars, _est)
+            if fresh:
+                for c in cars:
+                    c.gap_leader, c.gap_ahead = fresh.get(c.idx, (None, None))
         return cars
 
     def _fuel(self, buf: bytes) -> Optional[FuelState]:
@@ -501,27 +521,54 @@ class IRacingProvider(Provider):
         wheels: dict[str, TireWheel] = {}
         for corner in TIRE_CORNERS:
             pre = prefix[corner]
-            # temperatura da carcaça (tempC*): atualiza ao vivo com o carro na pista. A de superfície (temp*) pode
-            # ficar parada no valor do último pit (VERIFICAR no jogo), por isso só entra se a da carcaça não existir.
+            # temperatura da carcaça (tempC*). ATENÇÃO: num diagnóstico real (Porsche 992 Cup, até 231 km/h) ela ficou
+            # CONGELADA no valor de antes de sair do box; por isso há a detecção de "valor parado" mais abaixo.
+            # A de superfície (temp*) só entra se a da carcaça não existir.
             temps = [g(f"{pre}tempC{s}") for s in ("L", "M", "R")]
             if any(t is None for t in temps) or not any(t > 0.0 for t in temps):  # ausente ou zerada: não é leitura
                 temps = [g(f"{pre}temp{s}") for s in ("L", "M", "R")]
             wear = [g(f"{pre}wear{s}") for s in ("L", "M", "R")]
             press = g(f"{pre}pressure")
-            temp = sum(temps) / 3 if all(t is not None for t in temps) else None
-            wear_v = sum(wear) / 3 * 100.0 if all(w is not None for w in wear) else None
+            # O iRacing só atualiza parte desses valores no pit; na pista manda zero ou nada. Zero NÃO é leitura:
+            # vira "sem leitura" e, se houver uma leitura real anterior, ela é mantida e marcada como "último pit".
+            temp = sum(temps) / 3 if all(t is not None and t > 0.0 for t in temps) else None
+            wear_ok = all(w is not None and w > 0.0 for w in wear)
+            wear_v = sum(wear) / 3 * 100.0 if wear_ok else None
             if temp is not None and not (-50 < temp < 400):
                 temp = None
-            if wear_v is not None and not (0 <= wear_v <= 100.5):
+            if wear_v is not None and not (0 < wear_v <= 100.5):
                 wear_v = None
             if press is not None and not (0 < press < 1000):
                 press = None
             zt = tuple(temps) if temp is not None else None
             zw = tuple(w * 100.0 for w in wear) if wear_v is not None else None
-            if zw is not None and not all(0 <= w <= 100.5 for w in zw):
+            if zw is not None and not all(0 < w <= 100.5 for w in zw):
                 zw = None
+            fresh = TireWheel(temp_c=temp, pressure_kpa=press, wear_pct=wear_v, temps_c=zt, wear_zones=zw)
+            last = self._tire_last.get(corner)
+            stale = False
+            if last is not None:  # completa o que faltou agora com a última leitura real
+                for name in ("temp_c", "pressure_kpa", "wear_pct", "temps_c", "wear_zones"):
+                    if getattr(fresh, name) is None and getattr(last, name) is not None:
+                        setattr(fresh, name, getattr(last, name))
+                        stale = True
+            fresh.stale = stale
             if temp is not None or wear_v is not None or press is not None:
-                wheels[corner] = TireWheel(temp_c=temp, pressure_kpa=press, wear_pct=wear_v, temps_c=zt, wear_zones=zw)
+                self._tire_last[corner] = TireWheel(temp_c=fresh.temp_c, pressure_kpa=fresh.pressure_kpa,
+                                                    wear_pct=fresh.wear_pct, temps_c=fresh.temps_c, wear_zones=fresh.wear_zones)
+            if any(getattr(fresh, n) is not None for n in ("temp_c", "pressure_kpa", "wear_pct")):
+                wheels[corner] = fresh
+        # Valores que NÃO mudam com o carro andando não são leitura ao vivo (o iRacing só atualiza no pit/garagem):
+        # marcados como "última leitura", em vez de passar por dados de agora.
+        sig = tuple((c, round(w.temp_c or 0.0, 2), round(w.wear_pct or 0.0, 2), round(w.pressure_kpa or 0.0, 1))
+                    for c, w in sorted(wheels.items()))
+        now = self._clock()
+        if sig != self._tire_sig:
+            self._tire_sig, self._tire_changed_at = sig, now
+        moving = float(g("Speed", 0.0) or 0.0) > FROZEN_MIN_SPEED_MS
+        if wheels and moving and now - self._tire_changed_at > FROZEN_AFTER_S:
+            for w in wheels.values():
+                w.stale = True
         return TireSet(wheels=wheels) if wheels else None
 
     @staticmethod
@@ -547,7 +594,13 @@ class IRacingProvider(Provider):
         rpm = g("RPM", 0.0)
         rpm_max = as_float(dinfo.get("DriverCarRedLine")) or as_float(dinfo.get("DriverCarSLBlinkRPM"))
         shift_sim = g("ShiftIndicatorPct", None)
-        if shift_sim is not None:
+        first, last_led = as_float(dinfo.get("DriverCarSLFirstRPM")), as_float(dinfo.get("DriverCarSLLastRPM"))
+        blink_rpm = as_float(dinfo.get("DriverCarSLBlinkRPM"))
+        blink: Optional[bool] = None
+        if first is not None and last_led and last_led > first:  # mesmos RPMs do shift light do jogo: LEDs em sincronia com ele
+            shift, src = max(0.0, min(1.0, (rpm - first) / (last_led - first))), "sim"
+            blink = (rpm >= blink_rpm) if blink_rpm else None
+        elif shift_sim is not None:
             shift, src = max(0.0, min(1.0, shift_sim)), "sim"
         else:
             first, shift_rpm = as_float(dinfo.get("DriverCarSLFirstRPM")), as_float(dinfo.get("DriverCarSLShiftRPM"))
@@ -559,6 +612,6 @@ class IRacingProvider(Provider):
             throttle=max(0.0, min(1.0, thr)), brake=max(0.0, min(1.0, brk)),
             clutch=max(0.0, min(1.0, clu)), steering=steer, steering_deg=steer_deg,
             gear=int(g("Gear", 0)), rpm=float(rpm), rpm_max=rpm_max,
-            speed_ms=float(g("Speed", 0.0)), shift_pct=shift, shift_source=src,
+            speed_ms=float(g("Speed", 0.0)), shift_pct=shift, shift_source=src, shift_blink=blink,
             abs_active=bool(g("BrakeABSactive", False)) if "BrakeABSactive" in self._vars else None,  # o TC o iRacing não informa
         )

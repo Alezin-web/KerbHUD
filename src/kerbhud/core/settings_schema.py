@@ -200,7 +200,8 @@ def settings_to_patch(settings: dict) -> dict:
         "my_country": settings.get("my_country") or "",
         "language": settings.get("language", "auto"),
         "update_repo": settings.get("update_repo") or "", "check_updates_on_start": bool(settings.get("check_updates_on_start", True)),
-        "iracing": {k: bool((settings.get("iracing") or {}).get(k, True)) for k in ("invert_clutch", "live_positions")},
+        "iracing": {k: bool((settings.get("iracing") or {}).get(k, d))
+                    for k, d in (("invert_clutch", True), ("live_positions", True))},
         "lmu": {k: (settings.get("lmu") or {}).get(k) or "" for k in ("driver_rank", "safety_rank", "contact_badge")},
         "hotkeys": {**DEFAULT_HOTKEYS, **(settings.get("hotkeys") or {})},
     }

@@ -61,7 +61,7 @@ def get_shift_start(options: dict) -> float:
 
 
 def shift_lights(pct: Optional[float], source: Optional[str], n: int = SHIFT_LED_COUNT,
-                 derived_start: float = DEFAULT_SHIFT_START) -> tuple[int, bool]:
+                 derived_start: float = DEFAULT_SHIFT_START, blink: Optional[bool] = None) -> tuple[int, bool]:
     """Quantos LEDs acender e se deve piscar (hora de trocar).
 
     Se o simulador fornece o indicador (`source == "sim"`), usa o valor direto. Se o
@@ -72,7 +72,7 @@ def shift_lights(pct: Optional[float], source: Optional[str], n: int = SHIFT_LED
         return 0, False
     p = (pct - derived_start) / (1.0 - derived_start) if source == "derived" else pct
     p = min(max(p, 0.0), 1.0)
-    return int(p * n + 1e-9), p >= 0.98
+    return int(p * n + 1e-9), (p >= 0.98 if blink is None else bool(blink))
 
 
 def steer_label(deg: Optional[float]) -> str:

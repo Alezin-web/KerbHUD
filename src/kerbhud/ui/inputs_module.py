@@ -146,6 +146,8 @@ class InputsModule(ModuleWindow):
         if self.options.get("abs_tc_alert", True) is not False:  # trechos em que o ABS/TC atuou: dourado, na mesma linha
             plot_flag_runs(p, samples, lambda s: s.brake, lambda s: s.abs_on, theme.GOLD, px, py, pw, ph, t0, seconds, 2.6)
             plot_flag_runs(p, samples, lambda s: s.throttle, lambda s: s.tc_on, theme.GOLD, px, py, pw, ph, t0, seconds, 2.6)
+        if self.options.get("downshift_marks", True) is not False:  # picos do acelerador ao reduzir a marcha
+            plot_flag_runs(p, samples, lambda s: s.throttle, lambda s: s.down, theme.PURPLE, px, py, pw, ph, t0, seconds, 2.6)
         if self.options.get("lock_alert", True) is not False:  # travamento: pontos azuis FORA das linhas, na faixa do topo
             p.setPen(Qt.NoPen)
             p.setBrush(QColor(theme.BLUE))
@@ -333,7 +335,7 @@ class InputsModule(ModuleWindow):
         """Fileira de LEDs de ponta a ponta no topo, recortada pelo contorno do módulo."""
         n = SHIFT_LED_COUNT
         lit, flash = shift_lights(i.shift_pct if i else None, i.shift_source if i else None, n,
-                                  get_shift_start(self.options))
+                                  get_shift_start(self.options), i.shift_blink if i else None)
         blink_on = int(time.monotonic() * 10) % 2 == 0
         led_w = (w - LED_GAP * (n - 1)) / n
         outline = QPainterPath()

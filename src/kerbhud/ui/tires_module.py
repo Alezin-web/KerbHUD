@@ -14,6 +14,7 @@ from __future__ import annotations
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 
+from ..core.i18n import tr
 from ..core.tireview import format_pressure, get_pressure_unit, tire_view
 from . import theme
 from .module_base import ModuleWindow, make_font
@@ -38,7 +39,8 @@ class TiresModule(ModuleWindow):
         p.drawRect(QRectF(0, 0, w, 3))
         p.setPen(QColor(theme.WHITE))
         p.setFont(make_font(14, True))
-        p.drawText(QRectF(0, 4, w, HEADER_H - 4), Qt.AlignCenter, "PNEUS" + (f"  ·  {v.compound}" if v.compound else ""))
+        p.drawText(QRectF(0, 4, w, HEADER_H - 4), Qt.AlignCenter, "PNEUS" + (f"  ·  {v.compound}" if v.compound else "")
+                   + (f"  ·  {tr('ÚLTIMA LEITURA')}" if v.stale else ""))
         if not v.has_data:
             p.setPen(QColor(theme.GRAY))
             p.setFont(make_font(14, True))

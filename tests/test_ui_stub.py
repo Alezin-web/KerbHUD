@@ -546,7 +546,7 @@ class TestUiWithStub(unittest.TestCase):
         self.assertTrue(any(theme.GOLD in b for b in brushes) or p.setPen.called)
         self.assertGreater(p.drawPath.call_count, 3)  # trecho dourado do freio por cima da linha
         # desligado em Config: nada de dourado nem de pulsar
-        win.options = {"abs_tc_alert": False, "lock_alert": False}
+        win.options = {"abs_tc_alert": False, "lock_alert": False, "downshift_marks": False}
         p = MagicMock(); win.paint_content(p, 620, 112)
         self.assertFalse(win.is_animating)
         self.assertEqual(p.drawPath.call_count, 3)

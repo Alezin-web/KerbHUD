@@ -74,6 +74,8 @@ class TelemetryModule(ModuleWindow):
                 if self.options.get("abs_tc_alert", True) is not False and ch in ("brake", "throttle"):
                     flag = (lambda s: s.abs_on) if ch == "brake" else (lambda s: s.tc_on)  # ABS no freio, TC no acelerador
                     plot_flag_runs(p, samples, lambda s, c=ch: getattr(s, c), flag, theme.GOLD, x, y, lw, lh, t0, seconds)
+                if self.options.get("downshift_marks", True) is not False and ch == "throttle":  # picos ao reduzir a marcha
+                    plot_flag_runs(p, samples, lambda s: s.throttle, lambda s: s.down, theme.PURPLE, x, y, lw, lh, t0, seconds)
             p.restore()
             self._lane_labels(p, lane_id, x, y, lh, scale, units)
         self._gutter(p, lanes, rects, samples[-1], units, plot_w)

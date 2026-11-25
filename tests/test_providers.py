@@ -350,8 +350,9 @@ class TestIRacing(unittest.TestCase):
         me = snap.player()
         self.assertEqual(me.driver_name, "Ana: da Silva #1")
         self.assertEqual(me.position, 2)
-        self.assertAlmostEqual(me.gap_leader, 12.5)
-        self.assertAlmostEqual(me.gap_ahead, 12.5)
+        # corrida: Int/Gap ao vivo pela posição na pista (sem tempo estimado: fração da volta x tempo de volta da classe)
+        self.assertAlmostEqual(me.gap_leader, 21.225, places=2)
+        self.assertAlmostEqual(me.gap_ahead, 21.225, places=2)
         self.assertEqual(snap.cars[1].status, CarStatus.PITS)
         self.assertAlmostEqual(me.best_lap, 139.9, places=2)
         self.assertAlmostEqual(me.est_lap_time, 141.5)
@@ -492,6 +493,55 @@ class TestStage6Data(unittest.TestCase):
         lf = p.poll().tires.wheels["fl"]
         self.assertAlmostEqual(lf.temp_c, 62.0)  # carcaça (60/62/64), não a superfície (80/83/86)
         self.assertEqual(lf.temps_c, (60.0, 62.0, 64.0))
+
+    def test_iracing_tyres_zero_is_no_reading_and_last_real_values_are_kept_as_stale(self):
+        p = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=ir_values())))
+        cur = {}
+        p._get = lambda buf, name, d=None: cur.get(name, d)
+        full = {f"{w}{k}": v for w in ("LF", "RF", "LR", "RR") for k, v in
+                (("tempCL", 70.0), ("tempCM", 72.0), ("tempCR", 74.0), ("wearL", 0.9), ("wearM", 0.9), ("wearR", 0.9),
+                 ("pressure", 180.0))}
+        zeros = {k: 0.0 for k in full}
+        # na pista o jogo manda zero, e ainda não houve leitura real: nada (não vira 0 °C nem 0% de desgaste)
+        cur.update(zeros)
+        self.assertIsNone(p._tires(b""))
+        # leitura real (no pit)
+        cur.update(full)
+        ts = p._tires(b"")
+        self.assertAlmostEqual(ts.wheels["fl"].temp_c, 72.0)
+        self.assertFalse(ts.wheels["fl"].stale)
+        # volta à pista: zeros de novo -> mantém a última leitura real, marcada como "última leitura"
+        cur.update(zeros)
+        ts = p._tires(b"")
+        self.assertAlmostEqual(ts.wheels["fl"].temp_c, 72.0)
+        self.assertAlmostEqual(ts.wheels["fl"].pressure_kpa, 180.0)
+        self.assertAlmostEqual(ts.wheels["fl"].wear_pct, 90.0)
+        self.assertTrue(ts.wheels["fl"].stale)
+        from kerbhud.core.model import Sim, Snapshot
+        from kerbhud.core.tireview import tire_view
+        self.assertTrue(tire_view(Snapshot(sim=Sim.IRACING, connected=True, tires=ts)).stale)
+        # fecha a conexão: a leitura antiga não vale para outra sessão
+        p.close()
+        self.assertEqual(p._tire_last, {})
+
+    def test_iracing_frozen_tyre_values_while_moving_are_marked_last_reading(self):
+        p = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=ir_values())))
+        now = [100.0]
+        p._clock = lambda: now[0]
+        cur = {f"{w}{k}": v for w in ("LF", "RF", "LR", "RR") for k, v in
+               (("tempCL", 38.0), ("tempCM", 38.0), ("tempCR", 38.0), ("wearL", 1.0), ("wearM", 1.0), ("wearR", 1.0))}
+        cur["Speed"] = 60.0
+        p._get = lambda buf, name, d=None: cur.get(name, d)
+        self.assertFalse(p._tires(b"").wheels["fl"].stale)   # acabou de ler: ainda não dá para saber
+        now[0] += 3.0
+        self.assertFalse(p._tires(b"").wheels["fl"].stale)   # parado há pouco tempo
+        now[0] += 6.0
+        self.assertTrue(p._tires(b"").wheels["fl"].stale)    # 9 s andando e nada mudou: não é ao vivo
+        cur["LFtempCL"] = 41.0                                 # o jogo voltou a atualizar (ex.: carro que informa ao vivo)
+        self.assertFalse(p._tires(b"").wheels["fl"].stale)
+        now[0] += 20.0
+        cur["Speed"] = 0.0                                     # parado (garagem/box): valor parado é normal, sem aviso
+        self.assertFalse(p._tires(b"").wheels["fl"].stale)
 
     def test_iracing_diagnostic_lists_raw_tyre_values(self):
         p = IRacingProvider(opener=lambda: BytesMapping(make_iracing_memory(values=ir_values())))

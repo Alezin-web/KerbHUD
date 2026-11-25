@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from .model import TIRE_CORNERS, Snapshot, TireWheel
+from .model import TIRE_CORNERS, Sim, Snapshot, TireWheel
 
 COLD_DELTA_C, HOT_DELTA_C = -10.0, 10.0  # em relação à temperatura ideal (quando o jogo informa)
 GENERIC_COLD_C, GENERIC_HOT_C = 65.0, 105.0  # sem temperatura ideal informada (iRacing): faixa genérica
@@ -72,6 +72,7 @@ class TireView:
     compound: Optional[str] = None
     lap: Optional[int] = None  # volta atual (voltas completas + 1)
     message: str = ""
+    stale: bool = False  # algum valor é a última leitura real (o simulador não informa agora)
 
 
 def temp_state(w: TireWheel) -> str:
@@ -100,6 +101,8 @@ def tire_view(snap: Optional[Snapshot]) -> TireView:
         return TireView(message="Aguardando dados")
     ts = snap.tires
     if ts is None or not ts.wheels:
+        if snap.sim == Sim.IRACING:
+            return TireView(message="Sem leitura dos pneus ainda: o iRacing pode só informar no pit")
         return TireView(message="Sem dados dos pneus")
     cells = {}
     for corner in TIRE_CORNERS:
@@ -120,4 +123,4 @@ def tire_view(snap: Optional[Snapshot]) -> TireView:
                                  bool(w.wear_zones), min((v for v, _i in known), default=None))
     me = snap.player()
     lap = me.laps_completed + 1 if me is not None and me.laps_completed is not None else None
-    return TireView(True, cells, ts.compound, lap)
+    return TireView(True, cells, ts.compound, lap, stale=any(w.stale for w in ts.wheels.values()))

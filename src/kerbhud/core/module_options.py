@@ -77,6 +77,7 @@ SPECS: dict[str, tuple[Opt, ...]] = {
     ),
     "telemetry": (
         _bool("abs_tc_alert", "Mostrar ABS/TC atuando (dourado)", True),
+        _bool("downshift_marks", "Marcar picos do acelerador ao reduzir a marcha (roxo)", True),
         Opt("channels", "Canais", "multi", lambda o: {c for c, on in get_channels(o).items() if on},
             tuple((c, CHANNEL_LABELS[c]) for c in CHANNELS), apply="channel"),
         Opt("history_s", "Histórico", "choice", lambda o: _near(get_history_s(o), [(h, "") for h in HISTORY_CHOICES]),
@@ -87,6 +88,7 @@ SPECS: dict[str, tuple[Opt, ...]] = {
         _bool("trace_steering", "Mostrar direção no gráfico", False),
         _bool("abs_tc_alert", "Avisar quando o ABS/TC atuar (dourado)", True),
         _bool("lock_alert", "Marcar roda travando (ponto azul)", True),
+        _bool("downshift_marks", "Marcar picos do acelerador ao reduzir a marcha (roxo)", True),
         Opt("wheel_style", "Volante", "choice", lambda o: get_wheel_style(o), WHEEL_STYLES),
         Opt("wheel_image", "Imagem do volante (arquivo PNG/JPG)", "file", lambda o: get_wheel_image(o)),
         Opt("trace_s", "Gráfico", "choice", lambda o: _near(get_trace_s(o), [(t, "") for t in TRACE_CHOICES]),

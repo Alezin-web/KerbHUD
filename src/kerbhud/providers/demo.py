@@ -230,10 +230,15 @@ DEMO_FEATURES: dict[str, str] = {
     "fabricante_pela_equipe_no_lmu": "lmu",
     "tempo_da_sessao_com_segundos": "corrida",
     "sugestao_de_melhoria_e_aviso_de_atualizacao": "corrida",
+    "pneus_ultima_leitura_do_pit": "corrida",
     "digflag_azul_antes_da_amarela": "corrida",
     "digflag_uma_bandeira_por_vez": "corrida",
     "abs_tc_dourado_e_travamento_no_inputs": "corrida",
     "volante_do_inputs_escolhivel": "corrida",
+    "picos_do_acelerador_ao_reduzir_a_marcha": "corrida",
+    "led_de_rpm_igual_ao_do_jogo_iracing": "corrida",
+    "led_de_rpm_aprende_a_troca_no_lmu": "corrida",
+    "int_e_gap_ao_vivo_no_iracing": "corrida",
     "fade_ao_aparecer_e_sumir": "corrida",
     "pneus_com_temperatura_em_destaque": "corrida",
     "escala_pelo_quadrado_vermelho": "corrida",
@@ -591,7 +596,8 @@ class DemoProvider(Provider):
             wheels[corner] = TireWheel(
                 temp_c=temp, optimal_c=90.0 if st.lmu_style else None, temps_c=zt, wear_zones=zw,
                 pressure_kpa=170.0 + 6.0 * math.sin(local / 7.0 + k) + 2.0 * k, wear_pct=wear,
-                flat=(st.lmu_style and corner == "rr" and 24.0 <= local < 30.0))
+                flat=(st.lmu_style and corner == "rr" and 24.0 <= local < 30.0),
+                stale=(not st.lmu_style and 12.0 <= local < 20.0))  # iRacing: só atualiza no pit, o resto é a última leitura
         return TireSet(wheels=wheels, compound="Medium" if st.lmu_style else None)
 
     @staticmethod
@@ -638,6 +644,8 @@ class DemoProvider(Provider):
         steer = _clamp(corner * 0.55, 0, 1) * side
         speed = 28 + 40 * (1 - corner) * (1 - 0.7 * brake)
         gear = max(2, min(6, int(speed / 11)))
+        if brake > 0.05 and speed % 11 > 8.5:
+            throttle = 0.6  # DEMO: acelerada ("ponta-calcanhar") logo depois de reduzir a marcha
         rpm = 4000 + 4100 * ((speed % 11) / 11)
         rpm_max = 8200.0
         return Inputs(

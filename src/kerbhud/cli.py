@@ -83,7 +83,10 @@ def _render(s: Snapshot) -> str:
 
 def _engine_for(sim: str) -> Engine:
     load_overrides_file(config_dir() / "brand_overrides.json")
-    cfg = load_settings(Path("config/settings.json"))
+    # as configurações que o programa SALVA ficam na pasta de configuração do usuário (a mesma do app); a cópia local
+    # `config/settings.json` só vale se não houver essa
+    saved = config_dir() / "settings.json"
+    cfg = load_settings(saved if saved.exists() else Path("config/settings.json"))
     cfg["simulator"] = sim
     return Engine(cfg)
 
