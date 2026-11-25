@@ -154,7 +154,8 @@ def _downshift_blips_in_demo():
     for k in range(0, 600):
         snap = at("corrida", k * 0.2)
         h.on_snapshot(snap, now=k * 0.2)
-    return any(s.down for s in h.window(200.0))
+    from kerbhud.core.history import downshift_blips
+    return bool(downshift_blips(h.window(200.0)))
 
 
 def _assists_in_demo():

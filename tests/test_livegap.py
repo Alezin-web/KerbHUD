@@ -48,23 +48,28 @@ class ShiftBlinkTest(unittest.TestCase):
 
 
 class DownshiftTest(unittest.TestCase):
-    def _snap(self, gear, thr):
-        return Snapshot(sim=Sim.DEMO, connected=True, inputs=Inputs(throttle=thr, gear=gear))
+    def _hist(self, seq):
+        from kerbhud.core.history import downshift_blips
+        h = TelemetryHistory()
+        for k, (gear, thr) in enumerate(seq):
+            h.on_snapshot(Snapshot(sim=Sim.DEMO, connected=True, inputs=Inputs(throttle=thr, gear=gear)), now=k * 0.1)
+        w = h.window(100.0)
+        ids = downshift_blips(w)
+        return [id(s) in ids for s in w]
 
     def test_blip_after_downshift_is_marked_and_expires(self):
-        h = TelemetryHistory()
-        h.on_snapshot(self._snap(4, 0.0), now=0.0)
-        h.on_snapshot(self._snap(3, 0.6), now=0.1)
-        h.on_snapshot(self._snap(3, 0.0), now=0.2)  # sem acelerador: não marca
-        h.on_snapshot(self._snap(3, 0.7), now=2.0)  # fora da janela
-        flags = [s.down for s in h.window(10.0)]
-        self.assertEqual(flags, [False, True, False, False])
+        flags = self._hist([(4, 0)] + [(3, 0.6)] + [(3, 0)] * 3 + [(3, 0.7)] * 2 + [(3, 0)] * 10 + [(3, 0.7)])
+        self.assertTrue(flags[1])
+        self.assertFalse(flags[2])
+        self.assertTrue(flags[5])      # ainda dentro da janela de 0,8 s
+        self.assertFalse(flags[-1])    # bem depois: não é pico de redução
+
+    def test_blip_before_gear_engages_and_through_neutral(self):
+        flags = self._hist([(4, 0), (4, 0.7), (4, 0.7), (0, 0.6), (0, 0.0), (3, 0.0), (3, 0)])
+        self.assertTrue(flags[1] and flags[2] and flags[3])  # acelerada antes do engate, passando pelo neutro
 
     def test_upshift_is_not_a_downshift(self):
-        h = TelemetryHistory()
-        h.on_snapshot(self._snap(3, 0.9), now=0.0)
-        h.on_snapshot(self._snap(4, 0.9), now=0.1)
-        self.assertFalse(any(s.down for s in h.window(10.0)))
+        self.assertFalse(any(self._hist([(3, 0.9), (4, 0.9), (4, 0.9)])))
 
 
 if __name__ == "__main__":

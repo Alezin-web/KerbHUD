@@ -14,6 +14,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPixmap
 
 from ..core.assists import assist_on, pulse
+from ..core.history import downshift_blips
 from ..core.history import decimate_columns
 from ..core.model import Inputs
 from ..core.wheels import get_wheel_image, get_wheel_style, valid_image
@@ -147,7 +148,8 @@ class InputsModule(ModuleWindow):
             plot_flag_runs(p, samples, lambda s: s.brake, lambda s: s.abs_on, theme.GOLD, px, py, pw, ph, t0, seconds, 2.6)
             plot_flag_runs(p, samples, lambda s: s.throttle, lambda s: s.tc_on, theme.GOLD, px, py, pw, ph, t0, seconds, 2.6)
         if self.options.get("downshift_marks", True) is not False:  # picos do acelerador ao reduzir a marcha
-            plot_flag_runs(p, samples, lambda s: s.throttle, lambda s: s.down, theme.PURPLE, px, py, pw, ph, t0, seconds, 2.6)
+            blips = downshift_blips(samples)
+            plot_flag_runs(p, samples, lambda s: s.throttle, lambda s: id(s) in blips, theme.PURPLE, px, py, pw, ph, t0, seconds, 2.6)
         if self.options.get("lock_alert", True) is not False:  # travamento: pontos azuis FORA das linhas, na faixa do topo
             p.setPen(Qt.NoPen)
             p.setBrush(QColor(theme.BLUE))

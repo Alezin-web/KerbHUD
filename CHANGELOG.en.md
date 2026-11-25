@@ -1,3 +1,12 @@
+## 0.17.15.1 — Patch: hotfix
+
+**Fixes**
+* **Throttle blips on downshifts:** they were not showing in game. A downshift is now recognised even when the game passes through neutral (clutch) and the blip may come slightly before or after the gear engages (heel-and-toe).
+* **RPM LEDs (Le Mans Ultimate):** the game does not report the shift-light RPM, so KerbHUD **learns your shift RPM** from your full-throttle upshifts (using the maximum RPM until it learns) and the LEDs fill up to it.
+
+**Removed**
+* The experimental live-tyre option via the `.ibt` (it did not work in iRacing). Tyres keep showing the last reading from the pits.
+
 ## 0.17.15
 
 **New**
@@ -5,8 +14,7 @@
 
 **Fixes**
 * **Live Int/Gap (iRacing, race):** they used to update only when crossing the finish line. They are now computed on every read from each car's track position and estimated time to that point, always relative to the car's own class. If the game does not report the class lap time, the game's value is still used.
-* **RPM LEDs (iRacing):** they now use the same RPMs as the car's in-game shift light (first LED, last LED and when it blinks) instead of an approximation. Le Mans Ultimate does not provide those values: there KerbHUD **learns your shift RPM** from your full-throttle upshifts (using the maximum RPM until it learns), and the LEDs fill up to it.
-* **Removed:** the experimental live-tyre option via the `.ibt` (it did not work in iRacing). Tyres keep showing the last reading from the pits.
+* **RPM LEDs (iRacing):** they now use the same RPMs as the car's in-game shift light (first LED, last LED and when it blinks) instead of an approximation. Le Mans Ultimate does not provide those values, so there it is still an approximation.
 
 ## 0.17.14.2 — Patch: tyres in iRacing
 

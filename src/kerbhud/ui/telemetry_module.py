@@ -8,7 +8,7 @@ from __future__ import annotations
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 
-from ..core.history import Sample, decimate_columns
+from ..core.history import Sample, decimate_columns, downshift_blips
 from ..core.viewmodel import (CHANNEL_SHORT, enabled_lanes, get_channels, get_history_s,
                               lane_layout, nice_ceiling, speed_unit, speed_value, steer_label)
 from ..core.i18n import tr
@@ -75,7 +75,8 @@ class TelemetryModule(ModuleWindow):
                     flag = (lambda s: s.abs_on) if ch == "brake" else (lambda s: s.tc_on)  # ABS no freio, TC no acelerador
                     plot_flag_runs(p, samples, lambda s, c=ch: getattr(s, c), flag, theme.GOLD, x, y, lw, lh, t0, seconds)
                 if self.options.get("downshift_marks", True) is not False and ch == "throttle":  # picos ao reduzir a marcha
-                    plot_flag_runs(p, samples, lambda s: s.throttle, lambda s: s.down, theme.PURPLE, x, y, lw, lh, t0, seconds)
+                    blips = downshift_blips(samples)
+                    plot_flag_runs(p, samples, lambda s: s.throttle, lambda s: id(s) in blips, theme.PURPLE, x, y, lw, lh, t0, seconds)
             p.restore()
             self._lane_labels(p, lane_id, x, y, lh, scale, units)
         self._gutter(p, lanes, rects, samples[-1], units, plot_w)

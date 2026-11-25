@@ -1,3 +1,12 @@
+## 0.17.15.1 — Patch: hotfix
+
+**Correções**
+* **Picos do acelerador ao reduzir a marcha:** não apareciam no jogo. Agora a redução é reconhecida mesmo quando o jogo passa pelo neutro (embreagem) e a acelerada pode vir um pouco antes ou depois de a marcha engatar (ponta-calcanhar).
+* **LED de RPM (Le Mans Ultimate):** o jogo não informa o RPM do shift light, então o KerbHUD **aprende o RPM de troca** pelas suas trocas de marcha para cima com o acelerador a fundo (usa o RPM máximo até aprender) e o LED enche até ele.
+
+**Removido**
+* A opção experimental de pneus ao vivo pelo `.ibt` (não funcionou no iRacing). Os pneus seguem mostrando a última leitura do pit.
+
 ## 0.17.15
 
 **Novidades**
@@ -5,8 +14,7 @@
 
 **Correções**
 * **Int/Gap ao vivo (iRacing, corrida):** antes só atualizavam ao cruzar a linha de chegada. Agora são calculados a cada leitura pela posição de cada carro na pista e pelo tempo estimado até aquele ponto, sempre relativos à própria classe. Se o jogo não informar o tempo de volta da classe, o valor do jogo continua sendo usado.
-* **LED de RPM (iRacing):** passam a usar os mesmos RPMs do shift light do carro no jogo (primeiro LED, último LED e quando pisca), em vez de uma aproximação. O Le Mans Ultimate não informa esses valores: lá o KerbHUD **aprende o RPM de troca** pelas suas trocas de marcha com o acelerador a fundo (e usa o RPM máximo até aprender), e o LED enche até ele.
-* **Removido:** a opção experimental de pneus ao vivo pelo `.ibt` (não funcionou no iRacing). Os pneus seguem mostrando a última leitura do pit.
+* **LED de RPM (iRacing):** passam a usar os mesmos RPMs do shift light do carro no jogo (primeiro LED, último LED e quando pisca), em vez de uma aproximação. O Le Mans Ultimate não informa esses valores, então lá continua sendo uma aproximação.
 
 ## 0.17.14.2 — Patch: pneus no iRacing
 

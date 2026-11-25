@@ -15,7 +15,30 @@ from typing import Optional
 from .model import Sim, Snapshot
 
 
-DOWNSHIFT_WINDOW_S = 0.8  # janela, depois de reduzir, em que a acelerada conta como "pico" de redução
+DOWNSHIFT_BEFORE_S = 0.5  # a acelerada pode vir um pouco ANTES de a marcha engatar (ponta-calcanhar)
+DOWNSHIFT_AFTER_S = 0.8   # ou depois
+
+
+def downshift_blips(samples) -> set:
+    """ids das amostras em que o acelerador está pressionado junto de uma redução de marcha (pico da redução).
+
+    A redução vale mesmo passando pelo neutro (embreagem) e a acelerada pode vir um pouco antes ou depois da troca,
+    por isso é calculada sobre a janela de amostras e não amostra a amostra."""
+    times, last = [], 0
+    for s in samples:
+        if s.gear >= 1:
+            if last >= 2 and s.gear < last:
+                times.append(s.t)
+            last = s.gear
+    if not times:
+        return set()
+    out, k = set(), 0
+    for s in samples:
+        while k < len(times) - 1 and times[k] + DOWNSHIFT_AFTER_S < s.t:
+            k += 1
+        if s.throttle > 0.05 and any(t - DOWNSHIFT_BEFORE_S <= s.t <= t + DOWNSHIFT_AFTER_S for t in times[max(0, k - 1):k + 2]):
+            out.add(id(s))
+    return out
 
 
 @dataclass(frozen=True)
@@ -33,7 +56,6 @@ class Sample:
     abs_on: bool = False
     tc_on: bool = False
     lock: bool = False
-    down: bool = False  # acelerada ("pico") logo após reduzir a marcha
 
 
 class TelemetryHistory:
@@ -42,27 +64,20 @@ class TelemetryHistory:
         self._buf: deque[Sample] = deque(maxlen=max_samples)
         self._lock = threading.Lock()
         self._sim: Optional[Sim] = None
-        self._gear: Optional[int] = None
-        self._down_until = -1e9
 
     # ---- escrita (thread do motor) ------------------------------------- #
     def on_snapshot(self, snap: Snapshot, now: Optional[float] = None) -> None:
         with self._lock:
             if not snap.connected or snap.sim != self._sim:
                 self._buf.clear()  # simulador mudou ou desconectou: histórico antigo não vale
-                self._gear = None
             self._sim = snap.sim if snap.connected else None
             i = snap.inputs
             if not snap.connected or i is None:
                 return
             t = time.monotonic() if now is None else now
-            if self._gear is not None and i.gear >= 1 and self._gear > i.gear and self._gear >= 2:  # reduziu a marcha
-                self._down_until = t + DOWNSHIFT_WINDOW_S
-            self._gear = i.gear
-            down = t <= self._down_until and i.throttle > 0.05
             self._buf.append(Sample(t, i.throttle, i.brake, i.clutch, i.speed_ms, i.rpm,
                                     i.steering, i.rpm_max, i.steering_deg, i.gear,
-                                    i.abs_active is True, i.tc_active is True, i.lockup is True, down))
+                                    i.abs_active is True, i.tc_active is True, i.lockup is True))
             cutoff = t - self.max_seconds
             while self._buf and self._buf[0].t < cutoff:
                 self._buf.popleft()
